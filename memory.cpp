@@ -36,8 +36,7 @@ memory::add(addr a, byte b)
         if (0) std::cout << "info: new block mem[" << a << "]=" << int(b) << std::endl;
     }
 
-    if (min_ > a) min_ = a;
-    if (max_ < a) max_ = a;
+    r_.extend(a);
 }
 
 byte 

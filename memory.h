@@ -9,19 +9,32 @@ typedef unsigned char byte;
 typedef unsigned long addr;
 typedef unsigned short uint16;
 
+class range
+{
+   addr min_;
+   addr max_;
+public:
+   range() : min_(addr(-1)), max_(addr(0)) {}
+   range(addr min, addr max) : min_(min), max_(max) {}
+   addr min() const { return min_;}
+   addr max() const { return max_;}
+   void extend(addr a) {
+       if (min_ > a) min_ = a;
+       if (max_ < a) max_ = a;
+   }
+   size_t size() const { return max_ - min_; }
+};
+
 class memory {
      typedef std::vector<byte> block;
      typedef std::map<addr,block> mmap;
      
      mmap m_;
-     addr min_;
-     addr max_;
+     range r_;
 
      byte const *find(addr a) const;
 
 public:
-
-     memory() : min_(addr(-1)), max_(addr(0)) {}
      void add(addr a, byte b);
      byte operator[](addr a) const;
      void canonize();
@@ -30,8 +43,8 @@ public:
 
      void print(std::ostream& os) const;
 
-     addr min() const { return min_; };
-     addr max() const { return max_; };
+     addr min() const { return r_.min(); };
+     addr max() const { return r_.max(); };
 
      friend memory offset(memory const &m, int off);
 };
@@ -43,16 +56,6 @@ std::ostream& operator<<(std::ostream& os, memory const& m) {
 }
 
 bool operator==(memory const& m1, memory const& m2);
-
-class range
-{
-   addr min_;
-   addr max_;
-public:
-   range(addr min, addr max) : min_(min), max_(max) {}
-   addr min() const { return min_;}
-   addr max() const { return max_;}
-};
 
 memory fill(memory const& m, range r, byte v = 0xFF);
 memory fill(memory const& m, byte v = 0xFF);
