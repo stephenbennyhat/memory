@@ -82,7 +82,7 @@ readmoto(std::istream& is, memory& mem)
                                  << std::endl;
                 for (int i = 0; i < count; i++) {
                     byte b = (byte) readhex(is, 2);
-                    mem.add(a++, b);
+                    mem[a++] = b;
                     chk += b;
                 }
                 byte chk2 = readhex(is, 2);

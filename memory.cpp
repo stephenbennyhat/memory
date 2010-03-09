@@ -7,38 +7,53 @@
 #include "crc.h"
 
 
-void
-memory::add(addr a, byte b)
+byte const *
+memory::find(addr a) const
 {
-    if (0) std::cout << std::hex << "m[" << a << "]=" << int(b) << std::endl;
+    return const_cast<memory*>(this)->find(a, false);
+}
 
-    bool found = false;
-
-    mmap::iterator const end = m_.end();
+byte *
+memory::find(addr a, bool ins)
+{
+    mmap::iterator end = m_.end();
     for (mmap::iterator i = m_.begin(); i != end; ++i) {
         addr ba = i->first;
         block &blk = i->second;
         int blksize = blk.size();
 
         if (a >= ba && a < ba + blksize) {
-            std::cerr << "error: already in memory" << std::endl;
-            return;
-        }
-        else if (a == ba + blksize) {
-            blk.push_back(b);
-            found = true;
-            if (0) std::cout << "info: append m[" << a << "]=" << int(b) << std::endl;
+            return &blk[a - ba];
         }
     }
 
-    if (!found) {
-        block blk;
-        blk.push_back(b);
-        m_[a] = blk;
-        if (0) std::cout << "info: new block mem[" << a << "]=" << int(b) << std::endl;
+    if (!ins)
+       return 0;
+
+    for (mmap::iterator i = m_.begin(); i != end; ++i) {
+        addr ba = i->first;
+        block &blk = i->second;
+        int blksize = blk.size();
+
+        if (a == ba + blksize) {
+            blk.push_back(byte());
+            r_.extend(a);
+            return &blk.back();
+        }
     }
 
     r_.extend(a);
+    block blk;
+    blk.push_back(byte());
+    m_[a] = blk;
+    return &m_[a].back();
+}
+
+void
+memory::insert(addr a, byte b)
+{
+    byte *bp = find(a, true);
+    *bp = b;
 }
 
 byte 
@@ -50,21 +65,12 @@ memory::operator[](addr a) const
     return *b;
 }
 
-byte const *
-memory::find(addr a) const
+byte& 
+memory::operator[](addr a)
 {
-    mmap::const_iterator const end = m_.end();
-    for (mmap::const_iterator i = m_.begin(); i != end; ++i) {
-        addr ba = i->first;
-        block const &blk = i->second;
-        int blksize = blk.size();
-
-        if (a >= ba && a < ba + blksize) {
-            return &blk[a - ba];
-        }
-    }
-
-    return 0;
+    byte *b = find(a, true);
+    assert(b);
+    return *b;
 }
 
 void
@@ -132,9 +138,19 @@ memory::print(std::ostream& os) const
     mmap::const_iterator const end = m_.end();
     for (mmap::const_iterator i = m_.begin(); i != end; ++i) {
         addr ba = i->first;
-        int blksize = i->second.size();
+        size_t blksize = i->second.size();
 
         os << std::hex << "[" << ba << "," << ba + blksize << ") len=" << blksize << std::endl;
+        os << ba << ":\t";
+        for (size_t j = 0; j < blksize; j++) {
+            if (j == 0 || j % 16) os << " "; else os << std::endl << "\t";
+            if (j > 16 * 4) {
+                os << "...";
+                break;
+            }
+            os << int(i->second[j]);
+        }
+        os << std::endl;
     }
 }
 
@@ -163,7 +179,7 @@ fill(memory const& m, range r, byte v)
 
     for (addr a = r.min(); a < r.max(); ++a) {
         if (!m.includes(a)) {
-            nm.add(a, v);
+            nm.insert(a, v);
         }
     }
 
@@ -180,7 +196,7 @@ crop(memory const& m, range r)
         if (!m.includes(a)) {
             throw std::out_of_range("crop");
         }
-        nm.add(a, m[a]);
+        nm.insert(a, m[a]);
     }
 
     nm.canonize();

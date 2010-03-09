@@ -34,10 +34,13 @@ class memory {
      range r_;
 
      byte const *find(addr a) const;
+     byte *find(addr a, bool ins);
+
 
 public:
-     void add(addr a, byte b);
-     byte operator[](addr a) const;
+     void insert(addr a, byte b);
+     byte  operator[](addr a) const;
+     byte& operator[](addr a);
      void canonize();
      bool contiguous() const;
      bool includes(addr a) const;
@@ -49,22 +52,31 @@ public:
 
      friend memory offset(memory const &m, int off);
 
-     class memory_iterator { //: public std::iterator {
+     class memory_iterator :
+             public std::iterator<std::input_iterator_tag,
+                                  byte,
+                                  size_t,
+                                  byte*,
+                                  byte&>
+     {
          typedef std::pair<addr,byte> pab;
-         memory *m_;
-         addr    a_;
+         memory     *m_;
+         addr        a_;
+         mutable pab p_; // just so operator-> works.
      public:
          memory_iterator(memory& m, addr a)
              : m_(&m), a_(a) {}
          memory_iterator(memory& m)
              : m_(&m), a_(m.min()) {}
+         memory_iterator() : m_(0), a_(0) {}
 
-         pab operator*() const {
-             return pab(a_, (*m_)[a_]);
+         pab *operator->() const {
+             p_ = pab(a_, (*m_)[a_]);
+             return &p_;
          }
-         //pab *operator->() const {
-             //return &(operator*());
-         //}
+         pab operator*() const {
+             return p_ = pab(a_, (*m_)[a_]);
+         }
 
          memory_iterator& operator++() {
              next();

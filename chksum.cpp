@@ -15,8 +15,9 @@ chkiter()
 {
     memory m1;
 
-    m1.add(1, 4);
-    m1.add(3, 5);
+    m1.insert(1, 4);
+    m1.insert(3, 5);
+    m1.insert(4, 6);
 
     std::cout << m1;
 
