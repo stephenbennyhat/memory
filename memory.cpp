@@ -2,8 +2,10 @@
 #include <vector>
 #include <iostream>
 #include <stdexcept>
+#include <assert.h>
 #include "memory.h"
 #include "crc.h"
+
 
 void
 memory::add(addr a, byte b)
@@ -81,7 +83,7 @@ memory::canonize()
         if (i2 != m_.end()) {
             if (0) std::cout << "could join " << ba << " and " << i2->first << std::endl;
 
-            for (int j = 0; j < i2->second.size(); j++) {
+            for (size_t j = 0; j < i2->second.size(); j++) {
                 blk.push_back(i2->second[j]);
             }
             m_.erase(i2);
@@ -119,8 +121,13 @@ void
 memory::print(std::ostream& os) const
 {
     os << "memory: nblocks=" << std::dec << m_.size() << std::hex
-       << " min=" << min() << " max=" << max()
-       << " crc16=" << crc16(*this) << std::endl;
+       << " min=" << min() << " max=" << max() << " crc16=";
+
+    if (contiguous())
+        os << crc16(*this);
+    else
+        os << "n/a" ;
+    os  << std::endl;
 
     mmap::const_iterator const end = m_.end();
     for (mmap::const_iterator i = m_.begin(); i != end; ++i) {

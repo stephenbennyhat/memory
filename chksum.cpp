@@ -9,6 +9,23 @@
 #include "readfile.h"
 #include "crc.h"
 
+
+void
+chkiter()
+{
+    memory m1;
+
+    m1.add(1, 4);
+    m1.add(3, 5);
+
+    std::cout << m1;
+
+    memory::iterator end = m1.end();
+    for (memory::iterator i = m1.begin(); i != end; i++) {
+        std::cout << (*i).first << " " << int((*i).second) << std::endl;
+    }
+}
+
 int
 main(int argc, char **argv)
 {
@@ -31,4 +48,6 @@ main(int argc, char **argv)
 
     memory om = offset(cm, 1);
     std::cout << om << std::endl;
+
+    chkiter();
 }

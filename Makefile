@@ -1,7 +1,9 @@
 O=chksum.o memory.o readfile.o crc.o
 T=chksum
 CC=g++
-CFLAGS=-Wall
+CFLAGS=-Wall -I/usr/local/include/boost-1_38/
+
+
 test: $T
 	./$T bootloader_SWE1.mhx
 
@@ -10,3 +12,12 @@ chksum: $O
 
 clean:
 	rm -f $T $O
+
+.cpp.o:
+		$(CC) $(CFLAGS) -c $< 
+
+chksum.o: memory.h readfile.h crc.h
+crc.o: memory.h crc.h
+memory.o: memory.h crc.h
+readfile.o: memory.h readfile.h
+writefile.o: memory.h

@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 #include <iostream> 
+#include <iterator> 
 
 typedef unsigned char byte;
 typedef unsigned long addr;
@@ -47,6 +48,53 @@ public:
      addr max() const { return r_.max(); };
 
      friend memory offset(memory const &m, int off);
+
+     class memory_iterator { //: public std::iterator {
+         typedef std::pair<addr,byte> pab;
+         memory *m_;
+         addr    a_;
+     public:
+         memory_iterator(memory& m, addr a)
+             : m_(&m), a_(a) {}
+         memory_iterator(memory& m)
+             : m_(&m), a_(m.min()) {}
+
+         pab operator*() const {
+             return pab(a_, (*m_)[a_]);
+         }
+         //pab *operator->() const {
+             //return &(operator*());
+         //}
+
+         memory_iterator& operator++() {
+             next();
+             return *this;
+         }
+         memory_iterator operator++(int) {
+             memory_iterator tmp = *this;
+             next();
+             return tmp;
+         }
+
+         friend bool operator==(memory_iterator i1, memory_iterator i2) {
+            return i1.a_ == i2.a_;
+         }
+         friend bool operator!=(memory_iterator i1, memory_iterator i2) {
+            return !(i1 == i2);
+         }
+     private:
+         void next() {
+             while (a_ != m_->max() + 1) {
+                 a_++;
+                 if (m_->includes(a_))
+                     break;
+             }
+         }
+     };
+
+     typedef memory_iterator iterator;
+     memory_iterator begin() { return memory_iterator(*this, min()); }
+     memory_iterator end()   { return memory_iterator(*this, max() + 1); }
 };
 
 inline
