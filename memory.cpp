@@ -6,74 +6,119 @@
 #include <ctype.h>
 #include "mem.h"
 
+using namespace mem;
+using std::string;
+
+typedef unsigned long number;
+
+class var {
+public:
+    enum vartype {
+       tnull,
+       tmem,
+       trange,
+       tnumber,
+       tstring,
+    };
+
+    var() : t_(tnull) {} // for containers
+    var(memory m) : t_(tmem), m_(m) {}
+    var(range r) : t_(trange), r_(r) {}
+    var(number r) : t_(tnumber), n_(r) {}
+    var(string s) : t_(tstring), s_(s) {}
+
+    vartype type() const { return t_; }
+
+    memory& getmemory() {
+        check(tmem);
+        return m_;
+    }
+    range& getrange() {
+        check(trange);
+        return r_;
+    }
+    number& getnumber() {
+        check(tnumber);
+        return n_;
+    }
+    string& getstring() {
+        check(tstring);
+        return s_;
+    }
+private:
+    vartype  t_;
+
+    memory   m_;
+    range    r_;
+    number   n_;
+    string   s_;
+
+    void check(vartype t) {
+        if (t != t_) {
+            throw std::logic_error("bad symtype access");
+        }
+    }
+};
+
 struct parser {
     enum type {
         nonchar = 65536,
         read,
+        write,
         crc,
-        string,
+        str,
         eof,
         number,
         dotdot,
         name,
     };
 
-    enum symtype {
-       mem,
-       range,
-       num,
-    };
-
-    struct symbol {
-        symtype t;
-
-        mem::memory   m;
-        mem::range    r;
-        unsigned long n;
-    };
-
-    struct symtab {
-        std::map<std::string, symbol> tab;
-    };
-
-
-
     struct parse_error : public std::exception {};
 
-    parser(mem::memory& m) : m_(m) {}
+    parser(memory& m) : m_(m) {}
 
     void parse(std::istream& is) {
         while (lex(is) != eof) {
-             if (t_ == read) {
-                 expect(string, is, "filename");
-                 std::string filename = s_;
-                 expect(type(';'), is, "semi");
-                 readmoto(filename, m_);
-             }
-             else if (t_ == crc) {
-                 mem::range r = parserange(is);
-                 expect(type(';'), is, "semi");
+             if (t_ == crc) {
              }
              else if (t_ == name) {
-                 
+                 std::string vname = s_;
+                 expect(type('='), is, "equals");
+                 var v = parseexpr(is);
+                 symtab[vname] = v;
              }
              else {
-                 error("?");
+                 parseexpr(is);
              }
         }
     }
-    mem::range parserange(std::istream& is) {
-        mem::addr min = parseaddr(is);
-        expect(dotdot, is, "dotdot");
-        mem::addr max = parseaddr(is);
-        return mem::range(min, max);
+private:
+    var parseexpr(std::istream& is) {
+        if (lex(is) == read) {
+             expect(str, is, "filename");
+             std::string filename = s_;
+             memory m;
+             readmoto(filename, m);
+             return var(m);
+        }
+        else if (t_ == crc) {
+             range r = parserange(is);
+             expect(type(';'), is, "semi");
+        }
+        return var();
     }
-    mem::addr parseaddr(std::istream& is) {
+    range parserange(std::istream& is) {
+        expect(type('['), is, "[");
+        addr min = parseaddr(is);
+        expect(dotdot, is, "dotdot");
+        addr max = parseaddr(is);
+        expect(type(']'), is, "]");
+        return range(min, max);
+    }
+    addr parseaddr(std::istream& is) {
         expect(number, is, "number");
         return a_;
     }
-    
-private:
     void
     expect(type et, std::istream& is, std::string s) {
         if (lex(is) != et) {
@@ -109,10 +154,14 @@ private:
                   is >> ch;
                }
                if (!is) return eof;
-               return string;
+               return str;
            }
 
-           if (ch == ';') return type(';');
+           switch (ch) {
+           case ';':
+           case '[': case ']':
+               return type(ch);
+           }
            if (ch == '.') {
                is >> ch;
                if (ch == '.') return dotdot;
@@ -143,15 +192,17 @@ private:
         return eof;
     }
     std::string s_;
-    mem::addr a_;
+    addr a_;
     type t_;
-    mem::memory& m_;
+    memory& m_;
+
+    std::map<std::string, var> symtab;
 };
 
 int
 main(int argc, char **argv)
 {
-    mem::memory mem;
+    memory mem;
     parser p(mem);
 
     try {
