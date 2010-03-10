@@ -21,8 +21,8 @@ chkiter()
 
     std::cout << m1;
 
-    memory::iterator end = m1.end();
-    for (memory::iterator i = m1.begin(); i != end; i++) {
+    memory::const_iterator end = m1.end();
+    for (memory::const_iterator i = m1.begin(); i != end; i++) {
         std::cout << (*i).first << " " << int((*i).second) << std::endl;
     }
 }

@@ -52,23 +52,23 @@ public:
 
      friend memory offset(memory const &m, int off);
 
-     class memory_iterator :
+     class memory_const_iterator :
              public std::iterator<std::input_iterator_tag,
                                   byte,
                                   size_t,
-                                  byte*,
-                                  byte&>
+                                  byte const*,
+                                  byte const&>
      {
          typedef std::pair<addr,byte> pab;
-         memory     *m_;
-         addr        a_;
-         mutable pab p_; // just so operator-> works.
+         memory const *m_;
+         addr          a_;
+         mutable pab   p_; // just so operator-> works.
      public:
-         memory_iterator(memory& m, addr a)
+         memory_const_iterator(memory const& m, addr a)
              : m_(&m), a_(a) {}
-         memory_iterator(memory& m)
+         memory_const_iterator(memory const& m)
              : m_(&m), a_(m.min()) {}
-         memory_iterator() : m_(0), a_(0) {}
+         memory_const_iterator() : m_(0), a_(0) {}
 
          pab *operator->() const {
              p_ = pab(a_, (*m_)[a_]);
@@ -78,20 +78,20 @@ public:
              return p_ = pab(a_, (*m_)[a_]);
          }
 
-         memory_iterator& operator++() {
+         memory_const_iterator& operator++() {
              next();
              return *this;
          }
-         memory_iterator operator++(int) {
-             memory_iterator tmp = *this;
+         memory_const_iterator operator++(int) {
+             memory_const_iterator tmp = *this;
              next();
              return tmp;
          }
 
-         friend bool operator==(memory_iterator i1, memory_iterator i2) {
+         friend bool operator==(memory_const_iterator i1, memory_const_iterator i2) {
             return i1.a_ == i2.a_;
          }
-         friend bool operator!=(memory_iterator i1, memory_iterator i2) {
+         friend bool operator!=(memory_const_iterator i1, memory_const_iterator i2) {
             return !(i1 == i2);
          }
      private:
@@ -104,9 +104,9 @@ public:
          }
      };
 
-     typedef memory_iterator iterator;
-     memory_iterator begin() { return memory_iterator(*this, min()); }
-     memory_iterator end()   { return memory_iterator(*this, max() + 1); }
+     typedef memory_const_iterator const_iterator;
+     memory_const_iterator begin() const { return memory_const_iterator(*this, min()); }
+     memory_const_iterator end()   const { return memory_const_iterator(*this, max() + 1); }
 };
 
 inline

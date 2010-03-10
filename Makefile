@@ -1,7 +1,7 @@
-O=chksum.o memory.o readfile.o crc.o
+O=chksum.o memory.o readfile.o writefile.o crc.o
 T=chksum
 CC=g++
-CFLAGS=-Wall -I/usr/local/include/boost-1_38/
+CFLAGS=-Wall
 
 
 test: $T
