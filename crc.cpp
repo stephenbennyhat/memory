@@ -1,8 +1,11 @@
 #include <stdexcept>
 #include "memory.h"
-#include "crc.h"
 
-const uint16 crc16tab[256] =
+using namespace mem;
+
+namespace {
+
+uint16 const crc16tab[256] =
 {
 	0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
 	0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF,
@@ -38,8 +41,10 @@ const uint16 crc16tab[256] =
 	0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
 };
 
+}
+
 uint16
-crc16(memory const& m, uint16 init)
+mem::crc16(memory const& m, uint16 init)
 {
     uint16 crc = init;
 

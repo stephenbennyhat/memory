@@ -1,12 +1,10 @@
 #include <fstream>
 #include <iostream>
-#include <map>
-#include <sstream>
 #include <string>
-#include <vector>
 
 #include "memory.h"
-#include "readfile.h"
+
+using namespace mem;
 
 namespace {
 
@@ -44,7 +42,19 @@ readhex(std::istream& is, int width)
 };
 
 void
-readmoto(std::istream& is, memory& mem)
+mem::readmoto(std::string filename, memory& mem)
+{
+    std::ifstream is(filename.c_str());
+
+    if (is.fail()) {
+        std::cerr << "couldn't open: \"" << filename << "\"" << std::endl;
+        return;
+    }
+    mem::readmoto(is, mem);
+}
+
+void
+mem::readmoto(std::istream& is, memory& mem)
 {
     std::string line;
     int lineno = 1;
@@ -55,7 +65,7 @@ readmoto(std::istream& is, memory& mem)
         is >> ch;
         if (ch != 'S') {
             if (is)
-                std::cout << "not an srecord:\"" << line << "\"" << std::endl;
+                std::cerr << "not an srecord:\"" << line << "\"" << std::endl;
         }
         else {
             is >> ch;

@@ -4,8 +4,10 @@
 #include <stdexcept>
 #include <assert.h>
 #include "memory.h"
-#include "crc.h"
 
+using namespace mem;
+
+namespace mem {
 
 byte const *
 memory::find(addr a) const
@@ -205,4 +207,6 @@ offset(memory const& m, int off)
     }
 
     return nm;
+}
+
 }

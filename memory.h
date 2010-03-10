@@ -6,6 +6,8 @@
 #include <iostream> 
 #include <iterator> 
 
+namespace mem {
+
 typedef unsigned char byte;
 typedef unsigned long addr;
 typedef unsigned short uint16;
@@ -120,4 +122,14 @@ memory fill(memory const& m, byte v = 0xFF);
 memory crop(memory const& m, range r);
 memory offset(memory const &m, int off);
 
+
+void writemoto(std::ostream& os, memory const& mem, int addrlen=4, int maxline=16);
+void readmoto(std::istream& is, memory& mem);
+void readmoto(std::string filename, memory& mem);
+
+uint16 crc16(memory const& m, uint16 init = 0xFFFF);
+
+};
+
 #endif
+
