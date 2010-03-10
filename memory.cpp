@@ -1,212 +1,171 @@
-#include <map>
-#include <vector>
+#include <fstream>
 #include <iostream>
 #include <stdexcept>
+#include <map>
 #include <assert.h>
+#include <ctype.h>
+
 #include "memory.h"
 
-using namespace mem;
+struct parser {
+    enum type {
+        nonchar = 65536,
+        read,
+        crc,
+        string,
+        eof,
+        number,
+        dotdot,
+        name,
+    };
 
-namespace mem {
+    enum symtype {
+       mem,
+       range,
+       num,
+    };
 
-byte const *
-memory::find(addr a) const
-{
-    mmap::const_iterator end = m_.end();
-    for (mmap::const_iterator i = m_.begin(); i != end; ++i) {
-        addr ba = i->first;
-        block const &blk = i->second;
-        int blksize = blk.size();
+    struct symbol {
+        symtype t;
 
-        if (a >= ba && a < ba + blksize) {
-            return &blk[a - ba];
+        mem::memory   m;
+        mem::range    r;
+        unsigned long n;
+    };
+
+    struct symtab {
+        std::map<std::string, symbol> tab;
+    };
+
+
+
+    struct parse_error : public std::exception {};
+
+    parser(mem::memory& m) : m_(m) {}
+
+    void parse(std::istream& is) {
+        while (lex(is) != eof) {
+             if (t_ == read) {
+                 expect(string, is, "filename");
+                 std::string filename = s_;
+                 expect(type(';'), is, "semi");
+                 readmoto(filename, m_);
+             }
+             else if (t_ == crc) {
+                 mem::range r = parserange(is);
+                 expect(type(';'), is, "semi");
+             }
+             else if (t_ == name) {
+                 
+             }
+             else {
+                 error("?");
+             }
         }
     }
-
-    return 0;
-}
-
-byte&
-memory::insert(addr a, byte v)
-{
-    if (byte const *bp = find(a))
-        return const_cast<byte&>(*bp);
-        
-    mmap::const_iterator end = m_.end();
-    for (mmap::iterator i = m_.begin(); i != end; ++i) {
-        addr ba = i->first;
-        block &blk = i->second;
-        int blksize = blk.size();
-
-        if (a == ba + blksize) {
-            blk.push_back(v);
-            r_.extend(a);
-            return blk.back();
+    mem::range parserange(std::istream& is) {
+        mem::addr min = parseaddr(is);
+        expect(dotdot, is, "dotdot");
+        mem::addr max = parseaddr(is);
+        return mem::range(min, max);
+    }
+    mem::addr parseaddr(std::istream& is) {
+        expect(number, is, "number");
+        return a_;
+    }
+    
+private:
+    void
+    expect(type et, std::istream& is, std::string s) {
+        if (lex(is) != et) {
+            error("expected:" + s);
         }
     }
+    void
+    error(std::string s) {
+        std::cerr << "parse error: " << s << std::endl;
+        throw parse_error();
+    }
+    
+    type
+    lex(std::istream& is) {
+        t_ = xlex(is);
+        std::cout << "tok: " << t_ << " " << s_ << std::endl;
+        return t_;
+    }
+    type
+    xlex(std::istream& is) {
+        s_ = "";
+        is >> std::noskipws;
+        for (;;) {
+           char ch;
+           is >> ch;
+            
+           if (!is) break;
+           if (ch == '\n' || ch == '\r' || std::isspace(ch)) continue;
+           if (ch == '"') {
+               is >> ch;
+               while (is && ch != '"') {
+                  s_.push_back(ch);
+                  is >> ch;
+               }
+               if (!is) return eof;
+               return string;
+           }
 
-    r_.extend(a);
-    block blk;
-    blk.push_back(byte());
-    m_[a] = blk;
-    return m_[a].back();
-}
+           if (ch == ';') return type(';');
+           if (ch == '.') {
+               is >> ch;
+               if (ch == '.') return dotdot;
+               is.putback(ch);
+               return type('.');
+           }
 
-byte 
-memory::operator[](addr a) const
+           if (std::isalnum(ch)) {
+               do {
+                   s_.push_back(ch);
+                   is >> ch;
+               } while (isalnum(ch));
+               is.putback(ch);
+               
+               if (s_ == "read") return read;
+               if (s_ == "crc") return crc;
+               char *ep;
+               a_ = std::strtoul(s_.c_str(), &ep, 0);
+               std::cout << "check number: s=" << s_ << std::endl;
+               if (*ep == 0) {
+                   return number;
+               }
+               return name;
+               error("don't understand \"" + s_ + "\"");
+           }
+           error("unexpected");
+        }
+        return eof;
+    }
+    std::string s_;
+    mem::addr a_;
+    type t_;
+    mem::memory& m_;
+};
+
+int
+main(int argc, char **argv)
 {
-    byte const *b = find(a);
-    if (!b) 
-        throw std::out_of_range("memory");
-    return *b;
-}
+    mem::memory mem;
+    parser p(mem);
 
-byte& 
-memory::operator[](addr a)
-{
-    return insert(a, byte());
-}
-
-void
-memory::canonize()
-{
-    if (contiguous())
-        return;
-
-    mmap::iterator const end = m_.end();
-    for (mmap::iterator i = m_.begin(); i != end; ++i) {
-        addr ba = i->first;
-        block& blk = i->second;
-        int blksize = blk.size();
-        
-        mmap::iterator i2 = m_.find(ba + blksize);
-        if (i2 != m_.end()) {
-            if (0) std::cout << "could join " << ba << " and " << i2->first << std::endl;
-
-            for (size_t j = 0; j < i2->second.size(); j++) {
-                blk.push_back(i2->second[j]);
-            }
-            m_.erase(i2);
+    try {
+        if (argc == 1) {
+            p.parse(std::cin);
+        }
+        else for (int i = 1; i < argc; i++) {
+            std::ifstream is(argv[i]);
+            p.parse(is);
         }
     }
-}
-
-bool
-memory::includes(addr a) const
-{
-    return find(a);
-}
-
-bool
-memory::contiguous() const
-{
-    if (m_.size() < 2)
-        return true;
-
-    mmap::const_iterator end = m_.end();
-    mmap::const_iterator i = m_.begin();
-
-    addr next = i->first + i->second.size();
-    while (++i != end) {
-        if (i->first != next) {
-            return false;
-        }
-        next = i->first + i->second.size();
+    catch (parser::parse_error) {
+        std::cerr << "could not parse file" << std::endl;
     }
-    return true;
-}
-
-
-void
-memory::print(std::ostream& os) const
-{
-    os << "memory: nblocks=" << std::dec << m_.size() << std::hex
-       << " min=" << min() << " max=" << max() << " crc16=";
-
-    if (contiguous())
-        os << crc16(*this);
-    else
-        os << "n/a" ;
-    os  << std::endl;
-
-    mmap::const_iterator const end = m_.end();
-    for (mmap::const_iterator i = m_.begin(); i != end; ++i) {
-        addr ba = i->first;
-        size_t blksize = i->second.size();
-
-        os << std::hex << "[" << ba << "," << ba + blksize << ") len=" << blksize << std::endl;
-        os << ba << ":\t";
-        for (size_t j = 0; j < blksize; j++) {
-            if (j == 0 || j % 16) os << " "; else os << std::endl << "\t";
-            if (j > 16 * 4) {
-                os << "...";
-                break;
-            }
-            os << int(i->second[j]);
-        }
-        os << std::endl;
-    }
-}
-
-bool operator==(memory const& m1, memory const& m2)
-{
-    if (m1.min() != m2.min())
-        return false;
-    if (m1.max() != m2.max())
-        return false;
-    for (addr a = m1.min(); a < m1.max(); a++)
-        if (m1[a] != m2[a])
-            return false;
-    return true;
-}
-
-memory
-fill(memory const& m, byte v)
-{
-    return fill(m, range(m.min(), m.max()), v);
-}
-
-memory
-fill(memory const& m, range r, byte v)
-{
-    memory nm = m;
-
-    for (addr a = r.min(); a < r.max(); ++a) {
-        if (!m.includes(a)) {
-            nm.insert(a, v);
-        }
-    }
-
-    nm.canonize();
-    return nm;
-}
-
-memory
-crop(memory const& m, range r)
-{
-    memory nm;
-
-    for (addr a = r.min(); a < r.max(); ++a) {
-        if (m.includes(a)) {
-            nm.insert(a, m[a]);
-        }
-    }
-
-    nm.canonize();
-    return nm;
-}
-
-memory
-offset(memory const& m, int off)
-{
-    memory nm;
-
-    memory::const_iterator end = m.end();
-    for (memory::const_iterator i = m.begin(); i != end; ++i) {
-        nm[i->first + off] = i->second;
-    }
-
-    return nm;
-}
-
+//    writemoto(std::cout, mem);
 }
