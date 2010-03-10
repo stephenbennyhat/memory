@@ -3,9 +3,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <assert.h>
-#include "memory.h"
-
-using namespace mem;
+#include "mem.h"
 
 namespace mem {
 

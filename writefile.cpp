@@ -1,7 +1,7 @@
 #include <iostream>
 #include <iomanip>
 #include <vector>
-#include "memory.h"
+#include "mem.h"
 
 using namespace mem;
 

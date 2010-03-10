@@ -1,8 +1,7 @@
 #include <fstream>
 #include <iostream>
 #include <string>
-
-#include "memory.h"
+#include "mem.h"
 
 using namespace mem;
 

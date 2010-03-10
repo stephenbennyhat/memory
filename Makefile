@@ -18,8 +18,4 @@ clean:
 archive:
 	git archive -o $T.zip HEAD
 
-crc.o: memory.h 
-memory.o: memory.h 
-readfile.o: memory.h
-writefile.o: memory.h
-chksum.o: memory.h 
+# DO NOT DELETE

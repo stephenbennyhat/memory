@@ -4,8 +4,7 @@
 #include <map>
 #include <assert.h>
 #include <ctype.h>
-
-#include "memory.h"
+#include "mem.h"
 
 struct parser {
     enum type {
