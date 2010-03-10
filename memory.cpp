@@ -8,8 +8,16 @@
 
 using namespace mem;
 using std::string;
+using std::istream;
 
 typedef unsigned long number;
+
+struct parse_error : public std::exception {
+    parse_error(std::string s) {}
+};
+struct type_error : public std::exception {
+    type_error(std::string s) {}
+};
 
 class var {
 public:
@@ -55,59 +63,85 @@ private:
 
     void check(vartype t) {
         if (t != t_) {
-            throw std::logic_error("bad symtype access");
+            throw type_error("type error");
         }
     }
+
+public:
+    void print(std::ostream& os) const {
+       os << "blah";
+    }
 };
+
+std::ostream& operator<<(std::ostream& os, var const& v) {
+    v.print(os);
+    return os;
+}
 
 struct parser {
     enum type {
         nonchar = 65536,
         read,
         write,
-        crc,
+        crc16,
         str,
         eof,
-        number,
+        num,
         dotdot,
         name,
+        print,
     };
-
-    struct parse_error : public std::exception {};
 
     parser(memory& m) : m_(m) {}
 
     void parse(std::istream& is) {
+        line_ = 1;
         while (lex(is) != eof) {
-             if (t_ == crc) {
-             }
-             else if (t_ == name) {
-                 std::string vname = s_;
-                 expect(type('='), is, "equals");
-                 var v = parseexpr(is);
-                 symtab[vname] = v;
-             }
-             else {
-                 parseexpr(is);
-             }
+            parsestmt(is);
         }
     }
 private:
+    void parsestmt(istream& is) {
+        trace("stmt");
+        if (t_ == name) {
+            std::string vname = s_;
+            expect(type('='), is, "equals");
+            var v = parseexpr(is);
+            symtab[vname] = v;
+        }
+        else if (t_ == print) {
+            std::cout << parseexpr(is) << std::endl;
+        }
+        else {
+            parseexpr(is);
+        }
+        expect(type(';'), is, "semi");
+    }
     var parseexpr(std::istream& is) {
+        trace("expr");
         if (lex(is) == read) {
              expect(str, is, "filename");
              std::string filename = s_;
              memory m;
-             readmoto(filename, m);
-             return var(m);
+             readmoto(filename, m); 
+             return m;
         }
-        else if (t_ == crc) {
-             range r = parserange(is);
-             expect(type(';'), is, "semi");
+        else if (t_ == crc16) {
+             var v = parseexpr(is);
+             mem::memory& m = v.getmemory();
+             return mem::crc16(m);
         }
+        else if (t_ == name) {
+             return symtab[s_];
+        }
+        else if (t_ == num) {
+             return a_;
+        }
+        error("?");
         return var();
     }
     range parserange(std::istream& is) {
+        trace("range");
         expect(type('['), is, "[");
         addr min = parseaddr(is);
         expect(dotdot, is, "dotdot");
@@ -116,7 +150,8 @@ private:
         return range(min, max);
     }
     addr parseaddr(std::istream& is) {
-        expect(number, is, "number");
+        trace("addr");
+        expect(num, is, "number");
         return a_;
     }
     void
@@ -127,8 +162,11 @@ private:
     }
     void
     error(std::string s) {
-        std::cerr << "parse error: " << s << std::endl;
-        throw parse_error();
+        throw parse_error("parse error: " + s);
+    }
+    void
+    typeerror(std::string s) {
+        throw type_error("type error: " + s);
     }
     
     type
@@ -146,7 +184,12 @@ private:
            is >> ch;
             
            if (!is) break;
-           if (ch == '\n' || ch == '\r' || std::isspace(ch)) continue;
+           if (ch == '\n' || ch == '\r') {
+               line_++;
+               continue;
+           }
+           if (std::isspace(ch))
+               continue;
            if (ch == '"') {
                is >> ch;
                while (is && ch != '"') {
@@ -159,6 +202,7 @@ private:
 
            switch (ch) {
            case ';':
+           case '=':
            case '[': case ']':
                return type(ch);
            }
@@ -177,12 +221,12 @@ private:
                is.putback(ch);
                
                if (s_ == "read") return read;
-               if (s_ == "crc") return crc;
+               if (s_ == "crc") return crc16;
+               if (s_ == "print") return print;
                char *ep;
                a_ = std::strtoul(s_.c_str(), &ep, 0);
-               std::cout << "check number: s=" << s_ << std::endl;
                if (*ep == 0) {
-                   return number;
+                   return num;
                }
                return name;
                error("don't understand \"" + s_ + "\"");
@@ -194,9 +238,20 @@ private:
     std::string s_;
     addr a_;
     type t_;
+    int line_;
     memory& m_;
 
     std::map<std::string, var> symtab;
+
+    struct trace {
+        trace(string s) : s_(s) {
+            std::cout << "enter: " << s_ << std::endl;
+        }
+        ~trace() {
+            std::cout << "exit: " << s_ << std::endl;
+        }
+        string s_;
+    };
 };
 
 int
@@ -214,8 +269,10 @@ main(int argc, char **argv)
             p.parse(is);
         }
     }
-    catch (parser::parse_error) {
+    catch (parse_error) {
         std::cerr << "could not parse file" << std::endl;
     }
-//    writemoto(std::cout, mem);
+    catch (type_error) {
+        std::cerr << "type error" << std::endl;
+    }
 }
