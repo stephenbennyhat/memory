@@ -34,11 +34,9 @@ class memory {
      range r_;
 
      byte const *find(addr a) const;
-     byte *find(addr a, bool ins);
-
 
 public:
-     void insert(addr a, byte b);
+     byte& insert(addr a, byte b = byte());
      byte  operator[](addr a) const;
      byte& operator[](addr a);
      void canonize();

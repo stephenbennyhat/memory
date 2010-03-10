@@ -4,9 +4,11 @@
 #include <sstream>
 #include <string>
 #include <vector>
+#include <assert.h>
 
 #include "memory.h"
 #include "readfile.h"
+#include "writefile.h"
 #include "crc.h"
 
 
@@ -45,10 +47,14 @@ main(int argc, char **argv)
     bool b = mem == cm;
     std::cout << "same: " << b << std::endl;
 
-    std::cout << "nullchk=" << std::hex << crc16(memory()) << std::endl;
-
     memory om = offset(cm, 1);
     std::cout << om << std::endl;
+    assert(om.min() == cm.min() + 1);
+    assert(om.max() == cm.max() + 1);
+
+    std::cout << "nullchk=" << std::hex << crc16(memory()) << std::endl;
 
     chkiter();
+
+    writemoto(std::cout, cm);
 }

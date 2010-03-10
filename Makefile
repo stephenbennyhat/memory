@@ -1,7 +1,6 @@
 O=chksum.o memory.o readfile.o writefile.o crc.o
 T=chksum
-CC=g++
-CFLAGS=-Wall
+CC=g++ -Wall -g
 
 
 test: $T

@@ -10,16 +10,10 @@
 byte const *
 memory::find(addr a) const
 {
-    return const_cast<memory*>(this)->find(a, false);
-}
-
-byte *
-memory::find(addr a, bool ins)
-{
-    mmap::iterator end = m_.end();
-    for (mmap::iterator i = m_.begin(); i != end; ++i) {
+    mmap::const_iterator end = m_.end();
+    for (mmap::const_iterator i = m_.begin(); i != end; ++i) {
         addr ba = i->first;
-        block &blk = i->second;
+        block const &blk = i->second;
         int blksize = blk.size();
 
         if (a >= ba && a < ba + blksize) {
@@ -27,18 +21,25 @@ memory::find(addr a, bool ins)
         }
     }
 
-    if (!ins)
-       return 0;
+    return 0;
+}
 
+byte&
+memory::insert(addr a, byte v)
+{
+    if (byte const *bp = find(a))
+        return const_cast<byte&>(*bp);
+        
+    mmap::const_iterator end = m_.end();
     for (mmap::iterator i = m_.begin(); i != end; ++i) {
         addr ba = i->first;
         block &blk = i->second;
         int blksize = blk.size();
 
         if (a == ba + blksize) {
-            blk.push_back(byte());
+            blk.push_back(v);
             r_.extend(a);
-            return &blk.back();
+            return blk.back();
         }
     }
 
@@ -46,14 +47,7 @@ memory::find(addr a, bool ins)
     block blk;
     blk.push_back(byte());
     m_[a] = blk;
-    return &m_[a].back();
-}
-
-void
-memory::insert(addr a, byte b)
-{
-    byte *bp = find(a, true);
-    *bp = b;
+    return m_[a].back();
 }
 
 byte 
@@ -68,9 +62,7 @@ memory::operator[](addr a) const
 byte& 
 memory::operator[](addr a)
 {
-    byte *b = find(a, true);
-    assert(b);
-    return *b;
+    return insert(a, byte());
 }
 
 void
@@ -193,10 +185,9 @@ crop(memory const& m, range r)
     memory nm;
 
     for (addr a = r.min(); a < r.max(); ++a) {
-        if (!m.includes(a)) {
-            throw std::out_of_range("crop");
+        if (m.includes(a)) {
+            nm.insert(a, m[a]);
         }
-        nm.insert(a, m[a]);
     }
 
     nm.canonize();
@@ -208,9 +199,9 @@ offset(memory const& m, int off)
 {
     memory nm;
 
-    memory::mmap::const_iterator end = m.m_.end();
-    for (memory::mmap::const_iterator i = m.m_.begin(); i != end; ++i) {
-        nm.m_[i->first + off] = i->second;
+    memory::const_iterator end = m.end();
+    for (memory::const_iterator i = m.begin(); i != end; ++i) {
+        nm[i->first + off] = i->second;
     }
 
     return nm;
