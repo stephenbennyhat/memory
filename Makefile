@@ -1,5 +1,5 @@
 T=memory
-O=memory.o mem.o readfile.o writefile.o crc.o
+O=memory.o mem.o readfile.o writefile.o crc.o var.o
 CC=g++ -Wall -g
 
 test: $T
