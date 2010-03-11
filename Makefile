@@ -16,6 +16,6 @@ clean:
 	rm -f $T $O *~ *.stackdump
 
 archive:
-	git archive -o $T.zip HEAD
+	git archive --format=zip HEAD > $T.zip
 
 # DO NOT DELETE
