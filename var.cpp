@@ -2,9 +2,11 @@
 #include "var.h"
 
 void var::print(std::ostream& os) const {
-//    os << "<" << typestr(this->t_) << " ";
     switch (t_) {
     default:
+       break;
+    case tfunction:
+       os << typestr(t_);
        break;
     case tmemory:
        os << getmemory();
@@ -19,7 +21,6 @@ void var::print(std::ostream& os) const {
        os << getstring();
        break;
     }
-//os << ">";
 }
 
 std::string var::typestr(vartype t) {

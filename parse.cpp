@@ -7,6 +7,7 @@ using std::vector;
 parser::parser(std::istream& os) : lex_(os) {
     syms["read"] = readfn;
     syms["print"] = printfn;
+    syms["write"] = printfn;
     syms["crc16"] = crc16fn;
 }
 
@@ -51,25 +52,9 @@ callfn(var v, vector<var> const& args)
 
 void parser::parsestmt() {
     trace t1("stmt", lex_);
-    if (lex_[0].type() == lexer::write) {
-        trace t3("write", lex_);
-        consume();
-        var v = parseexpr();
-        v.check(var::tmemory);
-        writemoto(std::cout, v.getmemory());
-    }
-    else {
-        var n = parseexpr();
-        if (lex_[0].type() == '=') {
-            consume();
-            trace t2("assign", lex_);
-            var v = parseexpr();
-            syms[n.getstring()] = v;
-            std::cout << "installing " << n << "=" << v << std::endl;
-        }
-        else if (n.type() != var::tnull) {
-            std::cout << n << std::endl;
-        }
+    var n = parseexpr();
+    if (n.type() != var::tnull) {
+        std::cout << n << std::endl;
     }
     if (lex_[0].type() == lexer::eoftok) {
         return;
@@ -80,19 +65,18 @@ void parser::parsestmt() {
 
 var parser::parseexpr() {
     trace t1("expr", lex_);
-    if (lex_[0].type() == lexer::crc16) {
-         trace t2("crc", lex_);
-         consume();
-         var v = parseexpr();
-         mem::memory& m = v.getmemory();
-         return mem::crc16(m);
-    }
-    else if (lex_[0].type() == lexer::name) {
+    if (lex_[0].type() == lexer::name) {
          trace t3("name", lex_);
          std::string s = lex_[0].str();
          consume();
          var& v = syms[s];
-         if (lex_[0].type() == '(') {
+         if (lex_[0].type() == '=') {
+            trace t2("assign", lex_);
+            consume();
+            v = parseexpr();
+            std::cout << "installing " << s << "=" << v << std::endl;
+         }
+         else if (lex_[0].type() == '(') {
             trace t4("fn", lex_);
             consume();
             vector<var> args;

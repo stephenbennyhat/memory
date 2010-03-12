@@ -12,9 +12,10 @@ tokstream::~tokstream()
 {
 }
 
-char
+int
 tokstream::getchar()
 {
+    if (!is_) return -1;
     is_ >> std::noskipws;
     is_ >> ch_;
     pos_.chr++;
@@ -106,10 +107,8 @@ lexer::fetchnext()
             do {
                 s_.push_back(ch);
                 ch = getchar();
-            } while (isalnum(ch));
-            putback();
-            if (s_ == "crc") return token(crc16, s_, pos(), "crc16");
-            if (s_ == "write") return token(write, s_, pos(), "write");
+            } while (isalnum(ch) && !eof());
+            if (!eof()) putback();
 
             if (validnumber(s_)) return token(num, s_, pos(), "num");
 

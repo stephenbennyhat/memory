@@ -9,7 +9,8 @@ main(int argc, char **argv)
 {
     try {
         bool e = false;
-        if (argv[1][0] == '-') {
+
+        while (argv[1] && argv[1][0] == '-') {
             if (argv[1][1] == 'e') {
                 std::istringstream is(argv[2]);
                 parser(is).parse();
@@ -18,14 +19,13 @@ main(int argc, char **argv)
             }
         }
 
-        if (argc == 1 && !e) {
-            parser p(std::cin);
-            p.parse();
-        }
-        else for (int i = 1; i < argc; i++) {
+        for (int i = 1; i < argc; i++) {
             std::ifstream is(argv[i]);
-            parser p(is);
-            p.parse();
+            parser(is).parse();
+            e = true;
+        }
+        if (!e) {
+            parser(std::cin).parse();
         }
     }
     catch (parser::parse_error) {

@@ -24,10 +24,11 @@ depend:
 # DO NOT DELETE
 
 crc.o: mem.h
+fn.o: parse.h mem.h lex.h var.h fn.h
 lex.o: lex.h mem.h var.h
 mem.o: mem.h
 memory.o: mem.h parse.h lex.h var.h
-parse.o: parse.h mem.h lex.h var.h
+parse.o: parse.h mem.h lex.h var.h fn.h
 readfile.o: mem.h
 var.o: var.h mem.h lex.h
 writefile.o: mem.h

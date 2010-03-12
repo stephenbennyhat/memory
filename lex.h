@@ -27,7 +27,9 @@ struct token {
         : type_(type), s_(s), pos_(pos), desc_(desc) {}
     token(int type, std::string s, coord pos, char ch)
         : type_(type), s_(s), pos_(pos), desc_("ch ") { 
+        desc_.push_back('\'');
         desc_.push_back(ch);
+        desc_.push_back('\'');
     }
     token() : desc_("null") {}
 private:
@@ -52,7 +54,7 @@ public:
 protected:
     bool eof() { return !is_; }
     void putback() { is_.putback(ch_); }
-    char getchar();
+    int getchar();
     coord pos() { return pos_; }
 private:
     enum { debug = 0 } ;
@@ -84,8 +86,6 @@ struct lexer : public tokstream {
     enum toktype {
         eoftok = 65536,
         err,
-        write,
-        crc16,
         str,
         num,
         dotdot,
