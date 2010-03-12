@@ -1,2 +1,3 @@
 b = read("bootloader_SWE1.mhx");
 write(b);
+b[F000,FFFFFF];

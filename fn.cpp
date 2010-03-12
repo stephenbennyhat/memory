@@ -25,29 +25,19 @@ readfn(vector<var> const& args)
 }
 
 var
-writefn(vector<var> const& args)
-{
+writefn(vector<var> const& args) {
     size_t n = args.size();
 
-    if (n >= 2) {
+    if (n == 1) {
+        mem::writemoto(std::cout, args[0].getmemory()); 
+    }
+    else if (n == 2) {
+        std::ofstream os(args[1].getstring().c_str());
+        mem::writemoto(os, args[0].getmemory()); 
+    }
+    else {
         std::cout << "error: bad arguments" << std::endl;
-        return var();
     }
-
-    args[0].check(var::tmemory);
-    if (n > 0) args[1].check(var::tstring);
-
-    var const& m = args[0];
-
-    std::ostream *p = &std::cout;
-    std::ofstream os;
-
-    if (n > 1) {
-        os.open(args[1].getstring().c_str());
-        p = &os;
-    }
-
-    mem::writemoto(*p, m.getmemory()); 
     return var();
 }
 

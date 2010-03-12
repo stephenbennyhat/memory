@@ -118,8 +118,13 @@ memory::contiguous() const
 void
 memory::print(std::ostream& os, bool verbose) const
 {
-    os << "memory: nblocks=" << std::dec << m_.size() << std::hex
-       << " min=" << min() << " max=" << max() << " crc16=";
+    os << "memory: nblocks=" << std::dec << m_.size();
+    if (max() < min())
+        os << " empty";
+    else
+        os << std::hex << " min=" << min() << " max=" << max();
+   
+    os << " crc16=";
 
     if (contiguous())
         os << crc16(*this);

@@ -21,7 +21,7 @@ public:
         parsefile();
     }
 private:
-    enum { debug = 1 };
+    enum { debug = 0 };
 
     lexer lex_;
 

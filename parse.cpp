@@ -7,7 +7,7 @@ using std::vector;
 parser::parser(std::istream& os) : lex_(os) {
     syms["read"] = readfn;
     syms["print"] = printfn;
-    syms["write"] = printfn;
+    syms["write"] = writefn;
     syms["crc16"] = crc16fn;
 }
 
@@ -40,13 +40,14 @@ void parser::parsefile() {
 }
 
 var
-callfn(var v, vector<var> const& args)
-{
-    std::cout << "calling function args=[" << args.size() << ": ";
-    for (size_t i = 0; i < args.size(); ++i) {
-        std::cout << args[i] << (i + 1 == args.size() ? "" : ", ");
+callfn(var v, vector<var> const& args, bool debug = false) {
+    if (debug) {
+        std::cout << "calling function args=[" << args.size() << ": ";
+        for (size_t i = 0; i < args.size(); ++i) {
+            std::cout << args[i] << (i + 1 == args.size() ? "" : ", ");
+        }
+        std::cout << "]" << std::endl;
     }
-    std::cout << "]" << std::endl;
     return (*v.getfunction())(args);
 }
 
@@ -60,7 +61,7 @@ void parser::parsestmt() {
         return;
     }
     match(';');
-    printsymtab(std::cout);
+    if (debug) printsymtab(std::cout);
 }
 
 var parser::parseexpr() {
@@ -71,36 +72,41 @@ var parser::parseexpr() {
          consume();
          var& v = syms[s];
          if (lex_[0].type() == '=') {
-            trace t2("assign", lex_);
-            consume();
-            v = parseexpr();
-            std::cout << "installing " << s << "=" << v << std::endl;
+             trace t2("assign", lex_);
+             consume();
+             v = parseexpr();
+             if (debug) std::cout << "installing " << s << "=" << v << std::endl;
+         }
+         else if (lex_[0].type() == '[') {
+             consume();
+             mem::range r = parserange();
+             mem::memory m = crop(v.getmemory(), r);
+             return var(m);
          }
          else if (lex_[0].type() == '(') {
-            trace t4("fn", lex_);
-            consume();
-            vector<var> args;
+             trace t4("fn", lex_);
+             consume();
+             vector<var> args;
 
-            if (lex_[0].type() == ')') {
-               consume();
-            }
-            else {
-                trace t5("args", lex_);
-                for (;;) {
-                    var e = parseexpr();
-                    args.push_back(e);
-                    std::cout << " added arg: " << e << std::endl;
-                    if (lex_[0].type() == ',') {
-                        consume();
-                        continue;
-                    }
-                    else
-                        break;
-                }
-                match(')');
-            }
-
-            return callfn(v, args);
+             if (lex_[0].type() == ')') {
+                 consume();
+             }
+             else {
+                 trace t5("args", lex_);
+                 for (;;) {
+                     var e = parseexpr();
+                     args.push_back(e);
+                     if (debug) std::cout << " added arg: " << e << std::endl;
+                     if (lex_[0].type() == ',') {
+                         consume();
+                         continue;
+                     }
+                     else
+                         break;
+                 }
+                 match(')');
+             }
+             return callfn(v, args);
          }
          return v;
     }
