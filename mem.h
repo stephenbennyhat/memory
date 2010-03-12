@@ -28,6 +28,12 @@ public:
    size_t size() const { return max_ - min_; }
 };
 
+inline
+std::ostream& operator<<(std::ostream& os, range const& r) {
+    return os << '[' << r.min() << ".." << r.max() << ']';
+}
+
+
 class memory {
      typedef std::vector<byte> block;
      typedef std::map<addr,block> mmap;

@@ -5,6 +5,8 @@
 #include "mem.h"
 #include "lex.h"
 
+namespace memory {
+
 class var;
 typedef var (*fn)(std::vector<var> const&);
 
@@ -38,6 +40,7 @@ public:
     };
 
     var() : t_(tnull) {} // for containers
+
     var(mem::memory m) : t_(tmemory), m_(m) {}
     var(mem::range r) : t_(trange), r_(r) {}
     var(number r) : t_(tnumber), n_(r) {}
@@ -115,4 +118,5 @@ std::ostream& operator<<(std::ostream& os, var const& v) {
     return os;
 }
 
+}
 #endif

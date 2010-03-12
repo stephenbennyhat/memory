@@ -1,20 +1,19 @@
 #include "lex.h"
 #include "var.h"
 
-std::ostream& operator<<(std::ostream& os, token const& tok)
-{
+namespace memory {
+
+std::ostream& operator<<(std::ostream& os, token const& tok) {
     return os << "<tok: " << tok.desc() << ' ' << int(tok.type()) << ' '
               << tok.pos().line << ':' << tok.pos().chr
               << " \"" << tok.str() << '"' << ">";
 }
 
-tokstream::~tokstream()
-{
+tokstream::~tokstream() {
 }
 
 int
-tokstream::getchar()
-{
+tokstream::getchar() {
     if (!is_) return -1;
     is_ >> std::noskipws;
     is_ >> ch_;
@@ -27,19 +26,17 @@ tokstream::getchar()
 }
 
 void
-tokstream::print(std::ostream& os) const
-{
+tokstream::print(std::ostream& os) const {
     os << '[' << toks.size() << ':';
     for (int i = 0; i < (int) toks.size(); i++) {
-        os << (i - 1) << " " << toks[i] << ' ';
+        os << std::dec << (i - 1) << " " << toks[i] << ' ';
         if (i == 0) os << "| ";
     }
     os << ']';
 }
 
 token
-tokstream::operator[](int i)
-{
+tokstream::operator[](int i) {
    unsigned index = i + 1; // we allow -1 to mean previous tok.
    while (index >= toks.size()) {
        load();
@@ -48,29 +45,24 @@ tokstream::operator[](int i)
 }
 
 void
-tokstream::consume()
-{
+tokstream::consume() {
    toks.pop_front();
 }
 
 bool
-validnumber(std::string s)
-{
+validnumber(std::string s) {
     char *ep;
     (void) std::strtoul(s.c_str(), &ep, 0);
     return (*ep == 0);
 }
 
 number
-readnumber(std::string s)
-{
+readnumber(std::string s) {
     return std::strtoul(s.c_str(), 0, 0);
 }
 
 token
-lexer::fetchnext()
-{
-    std::string s_ = "";
+lexer::fetchnext() {
     for (;;) {
         char ch = getchar();
             
@@ -87,13 +79,14 @@ lexer::fetchnext()
             continue;
         }
         if (ch == '"') {
+            std::string s = "";
             ch = getchar();
             while (!eof() && ch != '"') {
-                s_.push_back(ch);
+                s.push_back(ch);
                 ch = getchar();
             }
             if (eof()) return token(eoftok, "", pos(), "eof");
-            return token(str, s_, pos(), "str");
+            return token(str, s, pos(), "str");
         }
         switch (ch) {
         case ';':
@@ -101,27 +94,30 @@ lexer::fetchnext()
         case ',':
         case '[': case ']':
         case '(': case ')':
-            return token(ch, s_, pos(), ch);
+            return token(ch, "", pos(), ch);
         }
         if (ch == '.') {
             ch = getchar();
-            if (ch == '.') return token(dotdot, s_, pos(), "..");
+            if (ch == '.') return token(dotdot, "", pos(), "..");
             putback();
-            return token('.', s_, pos(), '.');
+            return token('.', "", pos(), '.');
         }
+        std::string s;
         if (std::isalnum(ch)) {
             do {
-                s_.push_back(ch);
+                s.push_back(ch);
                 ch = getchar();
             } while (isalnum(ch) && !eof());
             if (!eof()) putback();
 
-            if (validnumber(s_)) return token(num, s_, pos(), "num");
+            if (validnumber(s)) return token(num, s, pos(), "num");
 
-            return token(name, s_, pos(), "name");
+            return token(name, s, pos(), "name");
         }
-        s_.push_back(ch);
-        return token(err, s_, pos(), "err");
+        s.push_back(ch);
+        throw lexer_error();
     }
-    return token(eoftok, s_, pos(), "tok");
+    return token(eoftok, "", pos(), "eof");
 }
+
+} // namespace

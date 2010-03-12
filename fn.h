@@ -4,9 +4,12 @@
 #include <vector>
 #include "var.h"
 
-var readfn(std::vector<var> const& args);
-var printfn(std::vector<var> const& args);
-var crc16fn(std::vector<var> const& args);
-var writefn(std::vector<var> const& args);
+namespace memory {
 
+var::var readfn(std::vector<var::var> const& args);
+var::var printfn(std::vector<var::var> const& args);
+var::var crc16fn(std::vector<var::var> const& args);
+var::var writefn(std::vector<var::var> const& args);
+
+}
 #endif

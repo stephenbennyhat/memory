@@ -4,9 +4,11 @@
 #include "mem.h"
 #include "parse.h"
 
+using memory::parser;
+using memory::var;
+
 int
-main(int argc, char **argv)
-{
+main(int argc, char **argv) {
     try {
         bool e = false;
 
@@ -25,7 +27,7 @@ main(int argc, char **argv)
             e = true;
         }
         if (!e) {
-            parser(std::cin).parse();
+                parser(std::cin).parse();
         }
     }
     catch (parser::parse_error) {

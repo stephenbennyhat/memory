@@ -12,22 +12,18 @@ writeline(std::ostream& os, memory const& mem, addr a, int len, int addrlen)
 {
     byte chk;
     int count = (len + 1 + addrlen);
-
     os << std::setfill('0') << std::uppercase;
     os << std::setw(1) << 'S' << std::hex << (addrlen - 1);
     os << std::setw(2) << std::hex << count;
     os << std::setw(2 * addrlen) << a;
-    
     chk = count;
     chk += byte(a >> 24);
     chk += byte(a >> 16);
     chk += byte(a >>  8);
     chk += byte(a >>  0);
-
     os << std::setw(2);
     for (int i = 0; i < len; i++) {
         byte b = mem[a + i];
-
         chk += b;
         os << std::setw(2) << unsigned(b);
     }
@@ -37,8 +33,10 @@ writeline(std::ostream& os, memory const& mem, addr a, int len, int addrlen)
 
 }
 
+namespace mem {
+
 void
-mem::writemoto(std::ostream& os, memory const& mem, int addrlen, int maxline)
+writemoto(std::ostream& os, memory const& mem, int addrlen, int maxline)
 {
     std::vector<byte> v;
     addr pa = mem.min();
@@ -59,3 +57,5 @@ mem::writemoto(std::ostream& os, memory const& mem, int addrlen, int maxline)
     if (!v.empty())
         writeline(os, mem, pa, v.size(), addrlen);
 }
+
+} // namespace

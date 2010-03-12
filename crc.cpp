@@ -1,11 +1,9 @@
 #include <stdexcept>
 #include "mem.h"
 
-using namespace mem;
-
 namespace {
 
-uint16 const crc16tab[256] =
+mem::uint16 const crc16tab[256] =
 {
 	0x0000, 0x1021, 0x2042, 0x3063, 0x4084, 0x50A5, 0x60C6, 0x70E7,
 	0x8108, 0x9129, 0xA14A, 0xB16B, 0xC18C, 0xD1AD, 0xE1CE, 0xF1EF,
@@ -41,21 +39,21 @@ uint16 const crc16tab[256] =
 	0x6E17, 0x7E36, 0x4E55, 0x5E74, 0x2E93, 0x3EB2, 0x0ED1, 0x1EF0
 };
 
-}
+} //namespace
+
+namespace mem {
 
 uint16
-mem::crc16(memory const& m, uint16 init)
-{
+crc16(memory const& m, uint16 init) {
     uint16 crc = init;
 
     if (!m.contiguous())
         throw std::out_of_range("crc16");
-	 	
-    for(addr a = m.min(); a < m.max(); a++) {
+    for(mem::addr a = m.min(); a < m.max(); a++) {
         uint16 tmp = (crc >> 8) ^ m[a];
-
         crc = (crc << 8) ^ crc16tab[tmp];
     }
-
     return crc;
 }
+
+} // namespace

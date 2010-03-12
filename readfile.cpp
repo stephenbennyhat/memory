@@ -8,14 +8,11 @@ using namespace mem;
 namespace {
 
 addr
-readhex(std::istream& is, int width)
-{
+readhex(std::istream& is, int width) {
    int v = 0;
-
    for (int i = 0; i < width; i++) {
        char ch;
        int digit =  0;
-
        is >> ch;
        if (!is) {
            throw "Parse Error";
@@ -32,35 +29,31 @@ readhex(std::istream& is, int width)
        else {
            throw "Unexpected digit";
        }
-
        v = v << 4 | digit;
    }
    return v;
 }
 
-};
+}
+
+namespace mem {
 
 void
-mem::readmoto(std::string filename, memory& mem)
-{
+readmoto(std::string filename, memory& mem) {
     std::ifstream is(filename.c_str());
-
     if (is.fail()) {
         std::cerr << "couldn't open: \"" << filename << "\"" << std::endl;
         return;
     }
-    mem::readmoto(is, mem);
+    readmoto(is, mem);
 }
 
 void
-mem::readmoto(std::istream& is, memory& mem)
-{
+readmoto(std::istream& is, memory& mem) {
     std::string line;
     int lineno = 1;
-
     do {
         char ch;
-
         is >> ch;
         if (ch != 'S') {
             if (is)
@@ -68,15 +61,10 @@ mem::readmoto(std::istream& is, memory& mem)
         }
         else {
             is >> ch;
-            switch (ch)
-            {
-            case '1': 
-            case '2':
-            case '3':
+            if (ch >= '1' && ch <= '3')
             {
                 int addrlen = 1 + ch - '0';
                 int count = readhex(is, 2);
-
                 byte chk = (byte) count;
                 
                 count -= addrlen + 1; // just data bytes.
@@ -99,11 +87,9 @@ mem::readmoto(std::istream& is, memory& mem)
                 if (chk != 0xFF) {
                     std::cerr << "chk err: " << std::hex << int(chk) << std::endl;
                 }
-                break;
             }
-            default:
+            else {
                 std::cerr << "ignored: S" << ch << std::endl;
-                break;
             }
         }
         lineno++;
@@ -112,3 +98,5 @@ mem::readmoto(std::istream& is, memory& mem)
     }
     while (is);
 }
+
+} // namespace

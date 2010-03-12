@@ -1,6 +1,8 @@
 #include <iostream>
 #include "var.h"
 
+namespace memory {
+
 void var::print(std::ostream& os) const {
     switch (t_) {
     default:
@@ -34,3 +36,5 @@ std::string var::typestr(vartype t) {
     case tfunction: return "function"; break;
     }
 }
+
+} // namespace

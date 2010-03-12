@@ -9,6 +9,8 @@
 #include <ctype.h>
 #include "mem.h"
 
+namespace memory {
+
 typedef unsigned long number;
 
 struct coord {
@@ -79,13 +81,11 @@ std::ostream& operator<<(std::ostream& os, tokstream& ts)
     return os;
 }
 
-bool validnumber(std::string s);
-number readnumber(std::string s);
-
 struct lexer : public tokstream {
+    struct lexer_error : public std::exception {};
+
     enum toktype {
         eoftok = 65536,
-        err,
         str,
         num,
         dotdot,
@@ -98,4 +98,8 @@ private:
     virtual token fetchnext();
 };
 
+bool validnumber(std::string s);
+number readnumber(std::string s);
+
+}
 #endif

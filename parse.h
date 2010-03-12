@@ -9,10 +9,18 @@
 #include "lex.h"
 #include "var.h"
 
+namespace memory {
+
 class parser {
 public:
     struct parse_error : public std::exception {
-        parse_error(std::string s) {}
+        parse_error(std::string s) : s_(s) {}
+        ~parse_error() throw () {}
+        std::string s_;
+
+        friend std::ostream& operator<<(std::ostream& os, parse_error const& pe) {
+            return os << pe.s_;
+        }
     };
 
     parser(std::istream& os);
@@ -25,20 +33,21 @@ private:
 
     lexer lex_;
 
-    typedef std::map<std::string, var> symtab;
+    typedef std::map<std::string, var::var> symtab;
     symtab syms;
 
     void printsymtab(std::ostream& os) const;
 
     void expect(int t);
+    void eatuntil(int t);
     void consume();
     void match(int t);
 
-    void checktype(var::vartype t1, var::vartype t2) const;
+    void checktype(var::var::vartype t1, var::var::vartype t2) const;
 
     void parsefile();
     void parsestmt();
-    var parseexpr();
+    var::var parseexpr();
     mem::range parserange();
     number parsenumber();
 
@@ -56,4 +65,6 @@ private:
         tokstream& ts_;
     };
 };
+
+} // namespace
 #endif

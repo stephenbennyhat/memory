@@ -4,6 +4,8 @@
 
 using std::vector;
 
+namespace memory {
+
 parser::parser(std::istream& os) : lex_(os) {
     syms["read"] = readfn;
     syms["print"] = printfn;
@@ -11,7 +13,8 @@ parser::parser(std::istream& os) : lex_(os) {
     syms["crc16"] = crc16fn;
 }
 
-void parser::printsymtab(std::ostream& os) const {
+void
+parser::printsymtab(std::ostream& os) const {
    symtab::const_iterator end = syms.end();
 
    os << "nsyms: " << syms.size() << std::endl;
@@ -20,22 +23,46 @@ void parser::printsymtab(std::ostream& os) const {
    }
 }
 
-void parser::expect(int t) {
+void
+parser::expect(int t) {
     if (lex_[0].type() != t) parse_error("unexpected");
 }
 
-void parser::consume() {
+void
+parser::consume() {
     lex_.consume();
 }
 
-void parser::match(int t) {
+void
+parser::match(int t) {
     expect(t);
     consume();
 }
 
-void parser::parsefile() {
+void
+parser::eatuntil(int stop) {
+    int t;
+    do {
+        t = lex_[0].type();
+        if (debug) std::cout << "eating: " << lex_[0] << std::endl;
+        consume();
+    }
+    while (stop != t && stop != lexer::eoftok);
+}
+
+void
+parser::parsefile() {
+    int errcnt = 0;
     while (lex_[0].type() != lexer::eoftok) {
-        parsestmt();
+        try {
+            parsestmt();
+        }
+        catch (parse_error const& pe) {
+           std::cout << pe << std::endl;
+           if (errcnt++ > 3) throw;
+           std::cout << "continuing..." << std::endl;
+           eatuntil(';');
+        }
     }
 }
 
@@ -51,7 +78,8 @@ callfn(var v, vector<var> const& args, bool debug = false) {
     return (*v.getfunction())(args);
 }
 
-void parser::parsestmt() {
+void
+parser::parsestmt() {
     trace t1("stmt", lex_);
     var n = parseexpr();
     if (n.type() != var::tnull) {
@@ -64,7 +92,8 @@ void parser::parsestmt() {
     if (debug) printsymtab(std::cout);
 }
 
-var parser::parseexpr() {
+var
+parser::parseexpr() {
     trace t1("expr", lex_);
     if (lex_[0].type() == lexer::name) {
          trace t3("name", lex_);
@@ -75,40 +104,35 @@ var parser::parseexpr() {
              trace t2("assign", lex_);
              consume();
              v = parseexpr();
-             if (debug) std::cout << "installing " << s << "=" << v << std::endl;
-         }
-         else if (lex_[0].type() == '[') {
-             consume();
-             mem::range r = parserange();
-             mem::memory m = crop(v.getmemory(), r);
-             return var(m);
          }
          else if (lex_[0].type() == '(') {
              trace t4("fn", lex_);
-             consume();
              vector<var> args;
-
-             if (lex_[0].type() == ')') {
+             if (lex_[1].type() == ')') {
+                 consume();
                  consume();
              }
              else {
                  trace t5("args", lex_);
-                 for (;;) {
+                 do {
+                     consume();
                      var e = parseexpr();
                      args.push_back(e);
-                     if (debug) std::cout << " added arg: " << e << std::endl;
-                     if (lex_[0].type() == ',') {
-                         consume();
-                         continue;
-                     }
-                     else
-                         break;
-                 }
+                 } while (lex_[0].type() == ',');
                  match(')');
              }
              return callfn(v, args);
          }
+         else if (lex_[0].type() == '[') {
+             var r = parseexpr();
+             return crop(v.getmemory(), r.getrange());
+         }
+
          return v;
+    }
+    else if (lex_[0].type() == '[') {
+        mem::range r = parserange();
+        return r;
     }
     else if (lex_[0].type() == lexer::num) {
          trace t3("num", lex_);
@@ -129,7 +153,8 @@ var parser::parseexpr() {
     return var();
 }
 
-mem::range parser::parserange() {
+mem::range
+parser::parserange() {
     trace t1("range", lex_);
     match('[');
     mem::addr min = parsenumber();
@@ -151,3 +176,5 @@ void
 parser::parseerror(std::string s) {
     throw parse_error("parse error: " + s);
 }
+
+} // namespace
