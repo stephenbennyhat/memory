@@ -123,22 +123,19 @@ memory::print(std::ostream& os, bool verbose) const
         os << " empty";
     else
         os << std::hex << " min=" << min() << " max=" << max();
-   
     os << " crc16=";
-
     if (contiguous())
-        os << crc16(*this);
+        os << std::hex << crc16(*this);
     else
         os << "n/a" ;
-
     if (verbose) {
         os << std::endl;
         mmap::const_iterator const end = m_.end();
         for (mmap::const_iterator i = m_.begin(); i != end; ++i) {
             addr ba = i->first;
             size_t blksize = i->second.size();
-
-            os << std::hex << "[" << ba << "," << ba + blksize << ") len=" << blksize << std::endl;
+            os << std::hex << "[" << ba << "," << ba + blksize << ") len="
+               << blksize << std::endl;
             os << ba << ":\t";
             for (size_t j = 0; j < blksize; j++) {
                 if (j == 0 || j % 16) os << " "; else os << std::endl << "\t";

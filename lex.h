@@ -96,7 +96,6 @@ struct lexer : public tokstream {
     virtual ~lexer() {}
 private:
     virtual token fetchnext();
-    std::string s_;
 };
 
 #endif

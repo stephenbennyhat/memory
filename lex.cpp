@@ -70,7 +70,7 @@ readnumber(std::string s)
 token
 lexer::fetchnext()
 {
-    s_ = "";
+    std::string s_ = "";
     for (;;) {
         char ch = getchar();
             
@@ -80,6 +80,12 @@ lexer::fetchnext()
         }
         if (std::isspace(ch))
             continue;
+        if (ch == '#') {
+            do
+                ch = getchar();
+            while (!eof() && ch != '\n');
+            continue;
+        }
         if (ch == '"') {
             ch = getchar();
             while (!eof() && ch != '"') {
