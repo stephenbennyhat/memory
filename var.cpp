@@ -21,3 +21,14 @@ void var::print(std::ostream& os) const {
        break;
     }
 }
+
+std::string var::typestr(vartype t) {
+    switch (t) {
+    default: 
+    case tnull:   return "(null)"; break;
+    case tmemory: return "memory"; break;
+    case trange:  return "range"; break;
+    case tnumber: return "number"; break;
+    case tstring: return "string"; break;
+    }
+}

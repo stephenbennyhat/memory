@@ -25,7 +25,7 @@ public:
         ~type_error() throw() {}
 
         friend std::ostream& operator<<(std::ostream& os, type_error const& te) {
-            os << "type error: " << te.was_ << " != " << te.exp_ ;
+            os << "type error: " << typestr(te.was_) << " != " << typestr(te.exp_) ;
             if (!te.s_.empty())
                 os << ": " << te.s_;
             return os;
@@ -78,6 +78,8 @@ public:
             throw type_error("type error", t, t_);
         }
     }
+    static std::string typestr(vartype t);
+
 private:
     vartype t_;
 

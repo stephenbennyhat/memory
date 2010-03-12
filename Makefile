@@ -13,7 +13,7 @@ $T: $O
 	$(CC) $(CFLAGS) -c $< 
 
 clean:
-	rm -f $T $O *~ *.stackdump
+	rm -f $T $O *~ *.stackdump *.bak
 
 archive:
 	git archive --format=zip HEAD > $T.zip
