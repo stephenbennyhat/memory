@@ -7,7 +7,7 @@ void var::print(std::ostream& os) const {
     default:
        os << "(null)";
        break;
-    case tmem:
+    case tmemory:
        os << getmemory();
        break;
     case trange:

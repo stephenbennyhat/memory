@@ -4,22 +4,36 @@
 #include "mem.h"
 #include "lex.h"
 
-struct type_error : public std::exception {
-            type_error(std::string s) {}
-};
-
 class var {
 public:
     enum vartype {
        tnull,
-       tmem,
+       tmemory,
        trange,
        tnumber,
        tstring,
     };
 
+    struct type_error : public std::exception {
+        std::string s_;
+        vartype exp_;
+        vartype was_;
+
+        type_error(std::string s, vartype exp, vartype was)
+                 : s_(s), exp_(exp), was_(was) {}
+
+        ~type_error() throw() {}
+
+        friend std::ostream& operator<<(std::ostream& os, type_error const& te) {
+            os << "type error: " << te.was_ << " != " << te.exp_ ;
+            if (!te.s_.empty())
+                os << ": " << te.s_;
+            return os;
+        }
+    };
+
     var() : t_(tnull) {} // for containers
-    var(mem::memory m) : t_(tmem), m_(m) {}
+    var(mem::memory m) : t_(tmemory), m_(m) {}
     var(mem::range r) : t_(trange), r_(r) {}
     var(number r) : t_(tnumber), n_(r) {}
     var(std::string s) : t_(tstring), s_(s) {}
@@ -27,11 +41,11 @@ public:
     vartype type() const { return t_; }
 
     mem::memory& getmemory() {
-        check(tmem);
+        check(tmemory);
         return m_;
     }
     mem::memory const& getmemory() const {
-        check(tmem);
+        check(tmemory);
         return m_;
     }
     mem::range& getrange() {
@@ -58,19 +72,20 @@ public:
         check(tstring);
         return s_;
     }
+
+    void check(vartype t) const {
+        if (t != t_) {
+            throw type_error("type error", t, t_);
+        }
+    }
 private:
     vartype t_;
 
+    // in a better world i'd hold these by pointer to derived type.
     mem::memory m_;
     mem::range r_;
     number n_;
     std::string s_;
-
-    void check(vartype t) const {
-        if (t != t_) {
-            throw type_error("type error");
-        }
-    }
 
 public:
     void print(std::ostream& os) const;

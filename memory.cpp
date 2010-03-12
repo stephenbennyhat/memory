@@ -24,7 +24,7 @@ main(int argc, char **argv)
     catch (parser::parse_error) {
         std::cerr << "could not parse file" << std::endl;
     }
-    catch (parser::type_error) {
-        std::cerr << "type error" << std::endl;
+    catch (var::type_error const& te) {
+        std::cerr << "type error: " << te << std::endl;
     }
 }
