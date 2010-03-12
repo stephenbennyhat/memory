@@ -1,5 +1,5 @@
 T=memory
-O=memory.o mem.o readfile.o writefile.o crc.o var.o
+O=memory.o mem.o readfile.o writefile.o crc.o var.o lex.o parse.o
 CC=g++ -Wall -g
 
 test: $T
@@ -18,4 +18,4 @@ clean:
 archive:
 	git archive --format=zip HEAD > $T.zip
 
-# DO NOT DELETE
+parse.o: parse.h

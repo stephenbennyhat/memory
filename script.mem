@@ -1,3 +1,1 @@
 b = read "bootloader_SWE1.mhx";
-
-crc b;

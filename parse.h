@@ -1,240 +1,136 @@
-#include <fstream>
-#include <iostream>
+#ifndef PARSE_H
+#define PARSE_H
+
 #include <stdexcept>
 #include <map>
 #include <assert.h>
 #include <ctype.h>
 #include "mem.h"
+#include "lex.h"
+#include "var.h"
 
-using namespace mem;
-using std::string;
-using std::istream;
-
-typedef unsigned long number;
-
-struct parse_error : public std::exception {
-    parse_error(std::string s) {}
-};
-struct type_error : public std::exception {
-    type_error(std::string s) {}
-};
-
-class var {
+class parser {
 public:
-    enum vartype {
-       tnull,
-       tmem,
-       trange,
-       tnumber,
-       tstring,
+    struct parse_error : public std::exception {
+        parse_error(std::string s) {}
     };
 
-    var() : t_(tnull) {} // for containers
-    var(memory m) : t_(tmem), m_(m) {}
-    var(range r) : t_(trange), r_(r) {}
-    var(number r) : t_(tnumber), n_(r) {}
-    var(string s) : t_(tstring), s_(s) {}
-
-    vartype type() const { return t_; }
-
-    memory& getmemory() {
-        check(tmem);
-        return m_;
-    }
-    range& getrange() {
-        check(trange);
-        return r_;
-    }
-    number& getnumber() {
-        check(tnumber);
-        return n_;
-    }
-    string& getstring() {
-        check(tstring);
-        return s_;
-    }
-private:
-    vartype  t_;
-
-    memory   m_;
-    range    r_;
-    number   n_;
-    string   s_;
-
-    void check(vartype t) {
-        if (t != t_) {
-            throw type_error("type error");
-        }
-    }
-
-public:
-    void print(std::ostream& os) const {
-       os << "blah";
-    }
-};
-
-std::ostream& operator<<(std::ostream& os, var const& v) {
-    v.print(os);
-    return os;
-}
-
-struct lexer {
-    enum toktype {
-        nonchar = 65536,
-        read,
-        write,
-        crc16,
-        str,
-        eof,
-        num,
-        dotdot,
-        name,
-        print,
+    struct type_error : public std::exception {
+        type_error(std::string s) {}
     };
 
-    token
-    lex(std::istream& is) {
-        token t;
-        t.type = xlex(is);
-        t.s = s_;
-        t.n = n_;
-        return t;
+    parser(std::istream& os) : lex_(os) {}
+
+    void parse() {
+        parsefile();
     }
 private:
-    string s_;
-    number n_;
-    toktype
-    xlex(std::istream& is) {
-        s_ = "";
-        is >> std::noskipws;
-        for (;;) {
-           char ch;
-           is >> ch;
-            
-           if (!is) break;
-           if (ch == '\n' || ch == '\r') {
-               line_++;
-               continue;
-           }
-           if (std::isspace(ch))
-               continue;
-           if (ch == '"') {
-               is >> ch;
-               while (is && ch != '"') {
-                  s_.push_back(ch);
-                  is >> ch;
-               }
-               if (!is) return eof;
-               return str;
-           }
-           switch (ch) {
-           case ';':
-           case '=':
-           case '[': case ']':
-               return toktype(ch);
-           }
-           if (ch == '.') {
-               is >> ch;
-               if (ch == '.') return dotdot;
-               is.putback(ch);
-               return toktype('.');
-           }
-           if (std::isalnum(ch)) {
-               do {
-                   s_.push_back(ch);
-                   is >> ch;
-               } while (isalnum(ch));
-               is.putback(ch);
-               
-               if (s_ == "read") return read;
-               if (s_ == "crc") return crc16;
-               if (s_ == "print") return print;
-               char *ep;
-               n_ = std::strtoul(s_.c_str(), &ep, 0);
-               if (*ep == 0) {
-                   return num;
-               }
-               return name;
-               error("don't understand \"" + s_ + "\"");
-           }
-           error("unexpected");
-        }
-        return eof;
+    enum { debug = 1 };
+    lexer lex_;
+
+    void expect(int t) {
+        if (lex_[0].type() != t) parse_error("unexpected");
     }
-};
-
-struct parser {
-
-    parser(memory& m) : m_(m) {}
-
-    void parse(std::istream& is) {
-        line_ = 1;
-        while (lex(is) != eof) {
-            parsestmt(is);
+    void consume() {
+        lex_.consume();
+    }
+    void match(int t) {
+        expect(t);
+        consume();
+    }
+    void parsefile() {
+        while (lex_[0].type() != lexer::eoftok) {
+            parsestmt();
         }
     }
-private:
-    void parsestmt(istream& is) {
-        trace("stmt");
-        if (t_ == name) {
-            std::string vname = s_;
-            expect(type('='), is, "equals");
-            var v = parseexpr(is);
-            symtab[vname] = v;
+    void parsestmt() {
+        trace t1("stmt", lex_);
+        if (lex_[0].type() == lexer::name) {
+            trace t2("assign", lex_);
+            std::string vname = lex_[0].str();
+            consume();
+            match('=');
+            symtab[vname] = parseexpr();
         }
-        else if (t_ == print) {
-            std::cout << parseexpr(is) << std::endl;
+        else if (lex_[0].type() == lexer::write) {
+            trace t3("write", lex_);
+            consume();
+            var v = parseexpr();
+            writemoto(std::cout, v.getmemory());
+        }
+        else if (lex_[0].type() == lexer::print) {
+            trace t3("print", lex_);
+            consume();
+            std::cout << parseexpr() << std::endl;
         }
         else {
-            parseexpr(is);
+            parseexpr();
         }
-        expect(type(';'), is, "semi");
+        match(';');
     }
-    var parseexpr(std::istream& is) {
-        trace("expr");
-        if (lex(is) == read) {
-             expect(str, is, "filename");
-             std::string filename = s_;
-             memory m;
+    var parseexpr() {
+        trace t1("expr", lex_);
+        if (lex_[0].type() == lexer::read) {
+             trace t2("read", lex_);
+             consume();
+             expect(lexer::str);
+             std::string filename = lex_[0].str();
+             consume();
+             mem::memory m;
              readmoto(filename, m); 
+             std::cout << "returning " << m << std::endl;
              return m;
         }
-        else if (t_ == crc16) {
-             var v = parseexpr(is);
+        else if (lex_[0].type() == lexer::crc16) {
+             trace t2("crc", lex_);
+             consume();
+             var v = parseexpr();
              mem::memory& m = v.getmemory();
              return mem::crc16(m);
         }
-        else if (t_ == name) {
-             return symtab[s_];
+        else if (lex_[0].type() == lexer::name) {
+             trace t3("name", lex_);
+             consume();
+             std::string s = lex_[0].str();
+             consume();
+             return symtab[s];
         }
-        else if (t_ == num) {
-             return a_;
+        else if (lex_[0].type() == lexer::num) {
+             trace t3("num", lex_);
+             number n = readnumber(lex_[0].str());
+             consume();
+             return n;
         }
-        error("?");
+        else if (lex_[0].type() == lexer::str) {
+             trace t3("str", lex_);
+             std::string s = lex_[0].str();
+             consume();
+             return s;
+        }
+        else {
+             trace t4("unexpected", lex_);
+             parseerror("unexpected");
+        }
         return var();
     }
-    range parserange(std::istream& is) {
-        trace("range");
-        expect(type('['), is, "[");
-        addr min = parseaddr(is);
-        expect(dotdot, is, "dotdot");
-        addr max = parseaddr(is);
-        expect(type(']'), is, "]");
-        return range(min, max);
+    mem::range parserange() {
+        trace t1("range", lex_);
+        match('[');
+        mem::addr min = parsenumber();
+        match(lexer::dotdot);
+        mem::addr max = parsenumber();
+        match(']');
+        return mem::range(min, max);
     }
-    addr parseaddr(std::istream& is) {
-        trace("addr");
-        expect(num, is, "number");
-        return a_;
-    }
-    void
-    expect(type et, std::istream& is, std::string s) {
-        if (lex(is) != et) {
-            error("expected:" + s);
-        }
+    number
+    parsenumber() {
+        expect(lexer::num);
+        number n = readnumber(lex_[0].str());
+        consume();
+        return n;
     }
     void
-    error(std::string s) {
+    parseerror(std::string s) {
         throw parse_error("parse error: " + s);
     }
     void
@@ -242,44 +138,17 @@ private:
         throw type_error("type error: " + s);
     }
 
-    std::string s_;
-    addr a_;
-    type t_;
-    int line_;
-    memory& m_;
-
     std::map<std::string, var> symtab;
 
     struct trace {
-        trace(string s) : s_(s) {
-            std::cout << "enter: " << s_ << std::endl;
+        trace(std::string s, tokstream& ts) : s_(s), ts_(ts) {
+            if (debug) std::cout << "enter: " << s_ << " " << ts_ << std::endl;
         }
         ~trace() {
-            std::cout << "exit: " << s_ << std::endl;
+            if (debug) std::cout << "exit: " << s_ << " " << ts_ << std::endl;
         }
-        string s_;
+        std::string s_;
+        tokstream& ts_;
     };
 };
-
-int
-main(int argc, char **argv)
-{
-    memory mem;
-    parser p(mem);
-
-    try {
-        if (argc == 1) {
-            p.parse(std::cin);
-        }
-        else for (int i = 1; i < argc; i++) {
-            std::ifstream is(argv[i]);
-            p.parse(is);
-        }
-    }
-    catch (parse_error) {
-        std::cerr << "could not parse file" << std::endl;
-    }
-    catch (type_error) {
-        std::cerr << "type error" << std::endl;
-    }
-}
+#endif

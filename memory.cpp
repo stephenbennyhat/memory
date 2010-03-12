@@ -5,25 +5,26 @@
 #include <assert.h>
 #include <ctype.h>
 #include "mem.h"
+#include "parse.h"
 
 int
 main(int argc, char **argv)
 {
-    parser p();
-
     try {
         if (argc == 1) {
-            p.parse(std::cin);
+            parser p(std::cin);
+            p.parse();
         }
         else for (int i = 1; i < argc; i++) {
             std::ifstream is(argv[i]);
-            p.parse(is);
+            parser p(is);
+            p.parse();
         }
     }
-    catch (parse_error) {
+    catch (parser::parse_error) {
         std::cerr << "could not parse file" << std::endl;
     }
-    catch (type_error) {
+    catch (parser::type_error) {
         std::cerr << "type error" << std::endl;
     }
 }
