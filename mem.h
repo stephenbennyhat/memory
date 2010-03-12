@@ -45,7 +45,7 @@ public:
      bool contiguous() const;
      bool includes(addr a) const;
 
-     void print(std::ostream& os) const;
+     void print(std::ostream& os, bool verbose = false) const;
 
      addr min() const { return r_.min(); };
      addr max() const { return r_.max(); };

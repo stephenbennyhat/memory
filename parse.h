@@ -15,14 +15,20 @@ public:
         parse_error(std::string s) {}
     };
 
-    parser(std::istream& os) : lex_(os) {}
+    parser(std::istream& os);
 
     void parse() {
         parsefile();
     }
 private:
     enum { debug = 1 };
+
     lexer lex_;
+
+    typedef std::map<std::string, var> symtab;
+    symtab syms;
+
+    void printsymtab(std::ostream& os) const;
 
     void expect(int t);
     void consume();
@@ -38,7 +44,6 @@ private:
 
     void parseerror(std::string s);
 
-    std::map<std::string, var> symtab;
 
     struct trace {
         trace(std::string s, tokstream& ts) : s_(s), ts_(ts) {

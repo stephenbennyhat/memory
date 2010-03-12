@@ -1,8 +1,5 @@
 #include <fstream>
-#include <iostream>
-#include <stdexcept>
-#include <map>
-#include <assert.h>
+#include <sstream>
 #include <ctype.h>
 #include "mem.h"
 #include "parse.h"
@@ -11,7 +8,17 @@ int
 main(int argc, char **argv)
 {
     try {
-        if (argc == 1) {
+        bool e = false;
+        if (argv[1][0] == '-') {
+            if (argv[1][1] == 'e') {
+                std::istringstream is(argv[2]);
+                parser(is).parse();
+                e = true;
+                argv+=2; argc-=2;
+            }
+        }
+
+        if (argc == 1 && !e) {
             parser p(std::cin);
             p.parse();
         }

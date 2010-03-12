@@ -29,8 +29,9 @@ void
 tokstream::print(std::ostream& os) const
 {
     os << '[' << toks.size() << ':';
-    for (size_t i = 0; i < toks.size(); i++) {
-        os << int(i - 1) << " " << toks[i] << ' ';
+    for (int i = 0; i < (int) toks.size(); i++) {
+        os << (i - 1) << " " << toks[i] << ' ';
+        if (i == 0) os << "| ";
     }
     os << ']';
 }
@@ -90,7 +91,9 @@ lexer::fetchnext()
         switch (ch) {
         case ';':
         case '=':
+        case ',':
         case '[': case ']':
+        case '(': case ')':
             return token(ch, s_, pos(), ch);
         }
         if (ch == '.') {
@@ -105,9 +108,7 @@ lexer::fetchnext()
                 ch = getchar();
             } while (isalnum(ch));
             putback();
-            if (s_ == "read") return token(read, s_, pos(), "read");
             if (s_ == "crc") return token(crc16, s_, pos(), "crc16");
-            if (s_ == "print") return token(print, s_, pos(), "print");
             if (s_ == "write") return token(write, s_, pos(), "write");
 
             if (validnumber(s_)) return token(num, s_, pos(), "num");

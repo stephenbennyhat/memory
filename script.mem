@@ -1,2 +1,2 @@
-b = read "bootloader_SWE1.mhx";
+b = read("bootloader_SWE1.mhx");
 write b;

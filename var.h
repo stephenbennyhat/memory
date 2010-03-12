@@ -1,8 +1,12 @@
 #ifndef VAR_H
 #define VAR_H
 
+#include <vector>
 #include "mem.h"
 #include "lex.h"
+
+class var;
+typedef var (*fn)(std::vector<var> const&);
 
 class var {
 public:
@@ -12,6 +16,7 @@ public:
        trange,
        tnumber,
        tstring,
+       tfunction,
     };
 
     struct type_error : public std::exception {
@@ -37,6 +42,7 @@ public:
     var(mem::range r) : t_(trange), r_(r) {}
     var(number r) : t_(tnumber), n_(r) {}
     var(std::string s) : t_(tstring), s_(s) {}
+    var(fn f) : t_(tfunction), f_(f) {}
 
     vartype type() const { return t_; }
 
@@ -72,6 +78,14 @@ public:
         check(tstring);
         return s_;
     }
+    fn &getfunction() {
+        check(tfunction);
+        return f_;
+    }
+    fn const& getfunction() const {
+        check(tfunction);
+        return f_;
+    }
 
     void check(vartype t) const {
         if (t != t_) {
@@ -79,6 +93,7 @@ public:
         }
     }
     static std::string typestr(vartype t);
+
 
 private:
     vartype t_;
@@ -88,6 +103,7 @@ private:
     mem::range r_;
     number n_;
     std::string s_;
+    fn f_;
 
 public:
     void print(std::ostream& os) const;

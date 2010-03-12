@@ -84,14 +84,12 @@ struct lexer : public tokstream {
     enum toktype {
         eoftok = 65536,
         err,
-        read,
         write,
         crc16,
         str,
         num,
         dotdot,
         name,
-        print,
         null = 0,
     };
     explicit lexer(std::istream& is) : tokstream(is) {}

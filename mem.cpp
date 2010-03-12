@@ -116,7 +116,7 @@ memory::contiguous() const
 
 
 void
-memory::print(std::ostream& os) const
+memory::print(std::ostream& os, bool verbose) const
 {
     os << "memory: nblocks=" << std::dec << m_.size() << std::hex
        << " min=" << min() << " max=" << max() << " crc16=";
@@ -125,24 +125,26 @@ memory::print(std::ostream& os) const
         os << crc16(*this);
     else
         os << "n/a" ;
-    os  << std::endl;
 
-    mmap::const_iterator const end = m_.end();
-    for (mmap::const_iterator i = m_.begin(); i != end; ++i) {
-        addr ba = i->first;
-        size_t blksize = i->second.size();
-
-        os << std::hex << "[" << ba << "," << ba + blksize << ") len=" << blksize << std::endl;
-        os << ba << ":\t";
-        for (size_t j = 0; j < blksize; j++) {
-            if (j == 0 || j % 16) os << " "; else os << std::endl << "\t";
-            if (j > 16 * 4) {
-                os << "...";
-                break;
-            }
-            os << int(i->second[j]);
-        }
+    if (verbose) {
         os << std::endl;
+        mmap::const_iterator const end = m_.end();
+        for (mmap::const_iterator i = m_.begin(); i != end; ++i) {
+            addr ba = i->first;
+            size_t blksize = i->second.size();
+
+            os << std::hex << "[" << ba << "," << ba + blksize << ") len=" << blksize << std::endl;
+            os << ba << ":\t";
+            for (size_t j = 0; j < blksize; j++) {
+                if (j == 0 || j % 16) os << " "; else os << std::endl << "\t";
+                if (j > 16 * 4) {
+                    os << "...";
+                    break;
+                }
+                os << int(i->second[j]);
+            }
+            os << std::endl;
+        }
     }
 }
 
