@@ -105,6 +105,10 @@ memory::print(std::ostream& os, bool verbose) const {
         os << std::hex << crc16(*this);
     else
         os << "n/a" ;
+    if (!getdesc().empty()) {
+        os << " desc=\"" << getdesc() << '"';
+    }
+    os << " addr=" << getexecaddr();
     if (verbose) {
         os << std::endl;
         mmap::const_iterator const end = m_.end();

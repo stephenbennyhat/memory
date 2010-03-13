@@ -12,35 +12,41 @@ typedef unsigned char byte;
 typedef unsigned long addr;
 typedef unsigned short uint16;
 
-class range
+template <typename T>
+class range_base
 {
-   addr min_;
-   addr max_;
+   T min_;
+   T max_;
 public:
-   range() : min_(addr(-1)), max_(addr(0)) {}
-   range(addr min, addr max) : min_(min), max_(max) {}
-   addr min() const { return min_;}
-   addr max() const { return max_;}
-   void extend(addr a) {
+   range_base() : min_(T(-1)), max_(T(0)) {}
+   range_base(T min, T max) : min_(min), max_(max) {}
+   T min() const { return min_;}
+   T max() const { return max_;}
+   void extend(T a) {
        if (min_ > a) min_ = a;
        if (max_ < a) max_ = a;
    }
    size_t size() const { return max_ - min_; }
 };
 
+typedef range_base<addr> range;
+
+template <typename T>
 inline
-std::ostream& operator<<(std::ostream& os, range const& r) {
+std::ostream& operator<<(std::ostream& os, range_base<T> const& r) {
     return os << std::hex << std::showbase
               << '[' << r.min() << ".." << r.max() << ']';
 }
 
+template <typename T>
 inline
-bool operator==(const range& r1, const range& r2) {
+bool operator==(const range_base<T>& r1, const range_base<T>& r2) {
     return r1.min() == r2.min() && r1.max() == r2.max();
 }
 
+template <typename T>
 inline
-bool operator!=(const range& r1, const range& r2) {
+bool operator!=(const range_base<T>& r1, const range_base<T>& r2) {
     return !(r1 == r2);
 }
 
@@ -50,6 +56,8 @@ class memory {
      
      mmap m_;
      range r_;
+     std::string desc_;
+     addr execaddr_;
 
      byte const *find(addr a) const;
 
@@ -64,6 +72,10 @@ public:
      void print(std::ostream& os, bool verbose = false) const;
 
      range getrange() const { return r_; }
+     std::string getdesc() const { return desc_; }
+     void setdesc(std::string const& s)  { desc_ = s; }
+     addr getexecaddr() const { return execaddr_; }
+     void setexecaddr(addr a) { execaddr_ = a; }
 
      friend memory offset(memory const &m, int off);
 
@@ -143,8 +155,8 @@ memory offset(memory const &m, int off);
 
 
 void writemoto(std::ostream& os, memory const& mem, int addrlen=4, int maxline=16);
-void readmoto(std::istream& is, memory& mem);
-void readmoto(std::string filename, memory& mem);
+void readmoto(std::istream& is, memory& mem, std::string const& filename="");
+void readmoto(std::string const& filename, memory& mem);
 
 uint16 crc16(memory const& m, uint16 init = 0xFFFF);
 

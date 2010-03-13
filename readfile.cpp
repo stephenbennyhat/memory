@@ -1,5 +1,6 @@
 #include <fstream>
 #include <iostream>
+#include <ios>
 #include <string>
 #include "mem.h"
 
@@ -34,30 +35,48 @@ readhex(std::istream& is, int width) {
    return v;
 }
 
+void
+chksum(byte chk, addr a, int lineno, std::istream& is, std::string const& filename)
+{
+    chk += (a >> 24);
+    chk += (a >> 16);
+    chk += (a >>  8);
+    chk += (a >>  0);
+    chk += readhex(is, 2);
+    if (chk != 0xFF) {
+        std::cerr << filename << ":" << lineno << ": "
+                  << "chk err: " 
+                  << std::hex << std::showbase << int(chk)
+                  << std::endl;
+    }
 }
+
+} // namespace
 
 namespace mem {
 
 void
-readmoto(std::string filename, memory& mem) {
+readmoto(std::string const& filename, memory& mem) {
     std::ifstream is(filename.c_str());
     if (is.fail()) {
         std::cerr << "couldn't open: \"" << filename << "\"" << std::endl;
         return;
     }
-    readmoto(is, mem);
+    readmoto(is, mem, filename);
 }
 
 void
-readmoto(std::istream& is, memory& mem) {
+readmoto(std::istream& is, memory& mem, std::string const& filename) {
     std::string line;
+    int lineno = 1;
     unsigned rcnt = 0;
     do {
         char ch;
         is >> ch;
         if (ch != 'S') {
             if (is)
-                std::cerr << "not an srecord:\"" << line << "\"" << std::endl;
+                std::cerr << filename << ":" << lineno << ": "
+                          << "not an srecord:\"" << line << "\"" << std::endl;
         }
         else {
             is >> ch;
@@ -68,20 +87,15 @@ readmoto(std::istream& is, memory& mem) {
                 byte chk = (byte) count;
                 count -= addrlen + 1; // just data bytes.
                 addr a = readhex(is, addrlen * 2);
-                chk += (a >> 24) + (a >> 16) + (a >> 8) + (a >> 0);
                 if (0) std::cerr << std::hex << "addr=" << a
                                  << std::dec << " count=" << count
                                  << std::endl;
                 for (int i = 0; i < count; i++) {
                     byte b = (byte) readhex(is, 2);
-                    mem[a++] = b;
+                    mem[a+i] = b;
                     chk += b;
                 }
-                byte chk2 = readhex(is, 2);
-                chk += chk2;
-                if (chk != 0xFF) {
-                    std::cerr << "chk err: " << std::hex << int(chk) << std::endl;
-                }
+                chksum(chk, a, lineno, is, filename);
                 rcnt++;
             }
             else if (ch == '5') {
@@ -91,16 +105,44 @@ readmoto(std::istream& is, memory& mem) {
                 count -= addrlen + 1; // just data bytes.
                 addr a = readhex(is, addrlen * 2);
                 if (rcnt != a) {
-                    std::cerr << "record count: " << std::hex << int(rcnt) 
-                              << "!=" << a << std::endl;
+                    std::cerr << filename << ":" << lineno << ": "
+                              << "record count: " << std::hex << int(rcnt) << "!=" << a
+                              << std::endl;
                 }
+                chksum(chk, a, lineno, is, filename);
+            }
+            else if (ch >= '7' && ch <= '9') {
+                int addrlen = 11 + '0' - ch;
+                int count = readhex(is, 2);
+                byte chk = (byte) count;
+                addr a = readhex(is, addrlen * 2);
+                mem.setexecaddr(a);
+                chksum(chk, a, lineno, is, filename);
+            }
+            else if (ch == '0') {
+                int addrlen = 2;
+                int count = readhex(is, 2);
+                byte chk = (byte) count;
+                count -= addrlen + 1; // just data bytes.
+                addr a = readhex(is, addrlen * 2);
+                std::string s;
+                for (int i = 0; i < count; i++) {
+                    char ch = (char) readhex(is, 2);
+                    chk += ch;
+                    s.push_back(ch);
+                }
+                mem.setdesc(s);
+                chksum(chk, a, lineno, is, filename);
             }
             else {
-                std::cerr << "ignored: S" << ch << std::endl;
+                std::cerr << filename << ":" << lineno << ": "
+                          << "ignored: S" << ch
+                          << std::endl;
             }
         }
         std::string line;
         getline(is, line);
+        lineno++;
     }
     while (is);
 }
