@@ -51,7 +51,7 @@ readmoto(std::string filename, memory& mem) {
 void
 readmoto(std::istream& is, memory& mem) {
     std::string line;
-    int lineno = 1;
+    unsigned rcnt = 0;
     do {
         char ch;
         is >> ch;
@@ -61,19 +61,14 @@ readmoto(std::istream& is, memory& mem) {
         }
         else {
             is >> ch;
-            if (ch >= '1' && ch <= '3')
-            {
+
+            if (ch >= '1' && ch <= '3') {
                 int addrlen = 1 + ch - '0';
                 int count = readhex(is, 2);
                 byte chk = (byte) count;
-                
                 count -= addrlen + 1; // just data bytes.
-                 
                 addr a = readhex(is, addrlen * 2);
-                chk += a >> 24;
-                chk += a >> 16;
-                chk += a >>  8;
-                chk += a >>  0;
+                chk += (a >> 24) + (a >> 16) + (a >> 8) + (a >> 0);
                 if (0) std::cerr << std::hex << "addr=" << a
                                  << std::dec << " count=" << count
                                  << std::endl;
@@ -87,12 +82,23 @@ readmoto(std::istream& is, memory& mem) {
                 if (chk != 0xFF) {
                     std::cerr << "chk err: " << std::hex << int(chk) << std::endl;
                 }
+                rcnt++;
+            }
+            else if (ch == '5') {
+                int addrlen = 2;
+                int count = readhex(is, 2);
+                byte chk = (byte) count;
+                count -= addrlen + 1; // just data bytes.
+                addr a = readhex(is, addrlen * 2);
+                if (rcnt != a) {
+                    std::cerr << "record count: " << std::hex << int(rcnt) 
+                              << "!=" << a << std::endl;
+                }
             }
             else {
                 std::cerr << "ignored: S" << ch << std::endl;
             }
         }
-        lineno++;
         std::string line;
         getline(is, line);
     }
