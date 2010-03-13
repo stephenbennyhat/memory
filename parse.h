@@ -20,8 +20,8 @@ public:
         std::string s_;
         token t_;
 
-        friend std::ostream& operator<<(std::ostream& os, parse_error const& pe) {
-            return os << pe.s_ << ": " << pe.t_;
+        virtual char const *what() throw () {
+            return s_.c_str();
         }
     };
 

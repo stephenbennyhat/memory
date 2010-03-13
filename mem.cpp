@@ -99,11 +99,7 @@ memory::contiguous() const {
 
 void
 memory::print(std::ostream& os, bool verbose) const {
-    os << "memory: nblocks=" << std::dec << m_.size();
-    if (max() < min())
-        os << " empty";
-    else
-        os << std::hex << " min=" << min() << " max=" << max();
+    os << "memory: nblocks=" << std::dec << m_.size() << " r=" << getrange();
     os << " crc16=";
     if (contiguous())
         os << std::hex << crc16(*this);
@@ -132,9 +128,9 @@ memory::print(std::ostream& os, bool verbose) const {
 }
 
 bool operator==(memory const& m1, memory const& m2) {
-    if (m1.min() != m2.min() || m1.max() != m2.max())
+    if (m1.getrange() != m2.getrange())
         return false;
-    for (addr a = m1.min(); a < m1.max(); a++)
+    for (addr a = m1.getrange().min(); a < m1.getrange().max(); a++)
         if (m1[a] != m2[a])
             return false;
     return true;
@@ -142,7 +138,7 @@ bool operator==(memory const& m1, memory const& m2) {
 
 memory
 fill(memory const& m, byte v) {
-    return fill(m, range(m.min(), m.max()), v);
+    return fill(m, m.getrange(), v);
 }
 
 memory

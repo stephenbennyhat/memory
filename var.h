@@ -8,7 +8,7 @@
 namespace memory {
 
 class var;
-typedef var (*fn)(std::vector<var> const&);
+typedef var fn(std::vector<var> const&);
 
 class var {
 public:
@@ -22,21 +22,15 @@ public:
     };
 
     struct type_error : public std::exception {
-        std::string s_;
-        vartype exp_;
-        vartype was_;
-
-        type_error(std::string s, vartype exp, vartype was)
-                 : s_(s), exp_(exp), was_(was) {}
-
-        ~type_error() throw() {}
-
-        friend std::ostream& operator<<(std::ostream& os, type_error const& te) {
-            os << "type error: " << typestr(te.was_) << " != " << typestr(te.exp_) ;
-            if (!te.s_.empty())
-                os << ": " << te.s_;
-            return os;
+        type_error(std::string s, vartype exp, vartype was) {
+            s_ = "type error: " + typestr(was) + " != " + typestr(exp);
+            if (!s_.empty())
+                s += ": " +  s;
         }
+        virtual char const *what() throw() { return s_.c_str(); }
+        ~type_error() throw() {}
+    private:
+        std::string s_;
     };
 
     var() : t_(tnull) {} // for containers
@@ -45,7 +39,7 @@ public:
     var(mem::range r) : t_(trange), r_(r) {}
     var(number r) : t_(tnumber), n_(r) {}
     var(std::string s) : t_(tstring), s_(s) {}
-    var(fn f) : t_(tfunction), f_(f) {}
+    var(fn* f) : t_(tfunction), f_(f) {}
 
     vartype type() const { return t_; }
 
@@ -81,11 +75,11 @@ public:
         check(tstring);
         return s_;
     }
-    fn &getfunction() {
+    fn* &getfunction() {
         check(tfunction);
         return f_;
     }
-    fn const& getfunction() const {
+    fn* const& getfunction() const {
         check(tfunction);
         return f_;
     }
@@ -106,7 +100,7 @@ private:
     mem::range r_;
     number n_;
     std::string s_;
-    fn f_;
+    fn* f_;
 
 public:
     void print(std::ostream& os) const;

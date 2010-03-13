@@ -64,4 +64,13 @@ crc16fn(vector<var> const& args) {
     return n;
 }
 
+var
+rangefn(vector<var> const& args) {
+    if (args.size() != 1) {
+        std::cout << "error: bad arguments" << std::endl;
+        return var();
+    }
+    return args[0].getmemory().getrange();
+}
+
 } // namespace

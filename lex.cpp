@@ -96,6 +96,7 @@ lexer::fetchnext() {
         case ',':
         case '[': case ']':
         case '(': case ')':
+        case '{': case '}':
             return token(ch, "", pos(), ch);
         }
         if (ch == '.') {
@@ -105,11 +106,11 @@ lexer::fetchnext() {
             return token('.', "", pos(), '.');
         }
         string s;
-        if (std::isalnum(ch)) {
+        if (std::isalnum(ch) || ch == '_') {
             do {
                 s.push_back(ch);
                 ch = getchar();
-            } while (isalnum(ch) && !eof());
+            } while ((isalnum(ch) || ch == '_') && !eof());
             if (!eof()) putback();
 
             if (validnumber(s)) return token(num, s, pos(), "num");

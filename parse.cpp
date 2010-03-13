@@ -11,6 +11,7 @@ parser::parser(std::istream& os) : lex_(os) {
     syms["print"] = printfn;
     syms["write"] = writefn;
     syms["crc16"] = crc16fn;
+    syms["range"] = rangefn;
 }
 
 void
@@ -56,8 +57,8 @@ parser::parsefile() {
         try {
             parsestmt();
         }
-        catch (parse_error const& pe) {
-           std::cout << pe << std::endl;
+        catch (std::exception const& e) {
+           std::cout << e.what() << std::endl;
            if (errcnt++ > 3) throw;
            std::cout << "continuing..." << std::endl;
            eatuntil(';');
@@ -80,10 +81,7 @@ callfn(var v, vector<var> const& args, bool debug = false) {
 void
 parser::parsestmt() {
     trace t1("stmt", lex_);
-    var n = parseexpr();
-    if (n.type() != var::tnull) {
-        std::cout << n << std::endl;
-    }
+    syms["_"] = parseexpr();
     if (lex_[0].type() == lexer::eoftok) {
         return;
     }

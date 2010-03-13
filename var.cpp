@@ -17,7 +17,7 @@ void var::print(std::ostream& os) const {
        os << getrange();
        break;
     case tnumber:
-       os << getnumber();
+       os << std::hex << std::showbase << getnumber();
        break;
     case tstring:
        os << getstring();

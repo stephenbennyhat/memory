@@ -30,9 +30,19 @@ public:
 
 inline
 std::ostream& operator<<(std::ostream& os, range const& r) {
-    return os << '[' << r.min() << ".." << r.max() << ']';
+    return os << std::hex << std::showbase
+              << '[' << r.min() << ".." << r.max() << ']';
 }
 
+inline
+bool operator==(const range& r1, const range& r2) {
+    return r1.min() == r2.min() && r1.max() == r2.max();
+}
+
+inline
+bool operator!=(const range& r1, const range& r2) {
+    return !(r1 == r2);
+}
 
 class memory {
      typedef std::vector<byte> block;
@@ -53,8 +63,7 @@ public:
 
      void print(std::ostream& os, bool verbose = false) const;
 
-     addr min() const { return r_.min(); };
-     addr max() const { return r_.max(); };
+     range getrange() const { return r_; }
 
      friend memory offset(memory const &m, int off);
 
@@ -73,7 +82,7 @@ public:
          memory_const_iterator(memory const& m, addr a)
              : m_(&m), a_(a) {}
          memory_const_iterator(memory const& m)
-             : m_(&m), a_(m.min()) {}
+             : m_(&m), a_(m.getrange().min()) {}
          memory_const_iterator() : m_(0), a_(0) {}
 
          pab *operator->() const {
@@ -102,7 +111,7 @@ public:
          }
      private:
          void next() {
-             while (a_ != m_->max() + 1) {
+             while (a_ != m_->getrange().max() + 1) {
                  a_++;
                  if (m_->includes(a_))
                      break;
@@ -111,8 +120,12 @@ public:
      };
 
      typedef memory_const_iterator const_iterator;
-     memory_const_iterator begin() const { return memory_const_iterator(*this, min()); }
-     memory_const_iterator end()   const { return memory_const_iterator(*this, max() + 1); }
+     memory_const_iterator begin() const {
+         return memory_const_iterator(*this, getrange().min());
+     }
+     memory_const_iterator end() const {
+         return memory_const_iterator(*this, getrange().max() + 1);
+     }
 };
 
 inline
