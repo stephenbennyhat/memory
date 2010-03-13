@@ -16,7 +16,6 @@ parser::parser(std::istream& os) : lex_(os) {
 void
 parser::printsymtab(std::ostream& os) const {
    symtab::const_iterator end = syms.end();
-
    os << "nsyms: " << syms.size() << std::endl;
    for (symtab::const_iterator i = syms.begin(); i != end; ++i) {
        os << " syms[" << i->first << "] = " << i->second << std::endl;
@@ -25,7 +24,7 @@ parser::printsymtab(std::ostream& os) const {
 
 void
 parser::expect(int t) {
-    if (lex_[0].type() != t) parse_error("unexpected");
+    if (lex_[0].type() != t) parse_error("unexpected", lex_[0]);
 }
 
 void
@@ -157,19 +156,11 @@ mem::range
 parser::parserange() {
     trace t1("range", lex_);
     match('[');
-    mem::addr min = parsenumber();
+    mem::addr min = parseexpr().getnumber();
     match(lexer::dotdot);
-    mem::addr max = parsenumber();
+    mem::addr max = parseexpr().getnumber();
     match(']');
     return mem::range(min, max);
-}
-
-number
-parser::parsenumber() {
-    expect(lexer::num);
-    number n = readnumber(lex_[0].str());
-    consume();
-    return n;
 }
 
 void

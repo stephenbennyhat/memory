@@ -33,7 +33,7 @@ struct token {
         desc_.push_back(ch);
         desc_.push_back('\'');
     }
-    token() : desc_("null") {}
+    token() : type_(0), desc_("null") {}
 private:
     int type_;
     std::string s_;
@@ -82,7 +82,14 @@ std::ostream& operator<<(std::ostream& os, tokstream& ts)
 }
 
 struct lexer : public tokstream {
-    struct lexer_error : public std::exception {};
+    struct lexer_error : public std::exception {
+       lexer_error(std::string const& s) : s_(s) {}
+       ~lexer_error() throw() {}
+       std::string s_;
+       virtual char const *what() const throw() {
+           return s_.c_str();
+       }
+    };
 
     enum toktype {
         eoftok = 65536,

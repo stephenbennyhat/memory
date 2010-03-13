@@ -14,12 +14,14 @@ namespace memory {
 class parser {
 public:
     struct parse_error : public std::exception {
-        parse_error(std::string s) : s_(s) {}
+        parse_error(std::string const& s) : s_(s) {}
+        parse_error(std::string const& s, token const& t) : s_(s), t_(t) {}
         ~parse_error() throw () {}
         std::string s_;
+        token t_;
 
         friend std::ostream& operator<<(std::ostream& os, parse_error const& pe) {
-            return os << pe.s_;
+            return os << pe.s_ << ": " << pe.t_;
         }
     };
 
@@ -49,7 +51,6 @@ private:
     void parsestmt();
     var::var parseexpr();
     mem::range parserange();
-    number parsenumber();
 
     void parseerror(std::string s);
 

@@ -3,6 +3,8 @@
 
 namespace memory {
 
+using std::string;
+
 std::ostream& operator<<(std::ostream& os, token const& tok) {
     return os << "<tok: " << tok.desc() << ' ' << int(tok.type()) << ' '
               << tok.pos().line << ':' << tok.pos().chr
@@ -50,14 +52,14 @@ tokstream::consume() {
 }
 
 bool
-validnumber(std::string s) {
+validnumber(string s) {
     char *ep;
     (void) std::strtoul(s.c_str(), &ep, 0);
     return (*ep == 0);
 }
 
 number
-readnumber(std::string s) {
+readnumber(string s) {
     return std::strtoul(s.c_str(), 0, 0);
 }
 
@@ -79,7 +81,7 @@ lexer::fetchnext() {
             continue;
         }
         if (ch == '"') {
-            std::string s = "";
+            string s = "";
             ch = getchar();
             while (!eof() && ch != '"') {
                 s.push_back(ch);
@@ -102,7 +104,7 @@ lexer::fetchnext() {
             putback();
             return token('.', "", pos(), '.');
         }
-        std::string s;
+        string s;
         if (std::isalnum(ch)) {
             do {
                 s.push_back(ch);
@@ -115,7 +117,7 @@ lexer::fetchnext() {
             return token(name, s, pos(), "name");
         }
         s.push_back(ch);
-        throw lexer_error();
+        throw lexer_error(string("didn't expect: ") + s);
     }
     return token(eoftok, "", pos(), "eof");
 }

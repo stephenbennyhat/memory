@@ -30,10 +30,7 @@ main(int argc, char **argv) {
                 parser(std::cin).parse();
         }
     }
-    catch (parser::parse_error) {
-        std::cerr << "could not parse file" << std::endl;
-    }
-    catch (var::type_error const& te) {
-        std::cerr << "type error: " << te << std::endl;
+    catch (std::exception const& e) {
+        std::cerr << e.what() << std::endl;
     }
 }
