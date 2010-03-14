@@ -38,6 +38,12 @@ tokstream::consume() {
    toks_.pop_front();
 }
 
+void
+tokstream::consumeuntil(int t) {
+    while (toks_[0].type() != t && toks_[0].type() != eof)
+        toks_.pop_front();
+}
+
 //////////////////////////////////////////////////////////////
 
 int
@@ -75,7 +81,7 @@ lexer::next() {
                 s.push_back(ch);
                 ch = getchar();
             }
-            if (!is_) return token(eoftok, "", pos_, "eof");
+            if (!is_) return token(tokstream::eof, "", pos_, "eof");
             return token(str, s, pos_, "str");
         }
         switch (ch) {
@@ -108,7 +114,7 @@ lexer::next() {
         s.push_back(ch);
         throw lexer_error(string("didn't expect: ") + s);
     }
-    return token(eoftok, "", pos_, "eof");
+    return token(tokstream::eof, "", pos_, "eof");
 }
 
 bool

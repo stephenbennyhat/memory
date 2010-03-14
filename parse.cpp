@@ -1,8 +1,10 @@
 #include "parse.h"
 #include "var.h"
 #include "fn.h"
+#include "trace.h"
 
 using std::vector;
+using tracer::trace;
 
 namespace memory {
 
@@ -34,119 +36,129 @@ parser::match(int t) {
     toks_.consume();
 }
 
-void
-parser::eatuntil(int stop) {
-    int t;
-    do {
-        t = toks_[0].type();
-        if (debug) std::cout << "eating: " << toks_[0] << std::endl;
-        toks_.consume();
-    }
-    while (stop != t && stop != lexer::eoftok);
-}
-
-void
+var
 parser::parsefile() {
     int errcnt = 0;
-    while (toks_[0].type() != lexer::eoftok) {
+    var v;
+    while (toks_[0].type() != tokstream::eof) {
         try {
-            parsestmt();
+            v = parsestmt();
         }
         catch (std::exception const& e) {
            std::cout << e.what() << std::endl;
-           if (errcnt++ > 3) throw;
-           std::cout << "continuing..." << std::endl;
-           eatuntil(';');
+           if (interactive) {
+               if (errcnt++ > 3) throw;
+               std::cout << "continuing..." << std::endl;
+               toks_.consumeuntil(';');
+           }
         }
     }
+    return v;
 }
 
 var
-callfn(var v, vector<var> const& args, bool debug = false) {
-    if (debug) {
-        std::cout << "calling function args=[" << args.size() << ": ";
-        for (size_t i = 0; i < args.size(); ++i) {
-            std::cout << args[i] << (i + 1 == args.size() ? "" : ", ");
-        }
-        std::cout << "]" << std::endl;
-    }
-    return v.getfunction()(args);
-}
-
-void
 parser::parsestmt() {
     trace t1("stmt", toks_);
-    syms["_"] = parseexpr();
-    if (toks_[0].type() == lexer::eoftok) {
-        return;
+    var v = parseexpr();
+    if (toks_[0].type() == tokstream::eof) {
+        return var();
     }
     match(';');
-    if (debug) printsymtab(std::cout);
+    if (0) printsymtab(std::cout);
+    return syms["_"] = v;
 }
 
 var
 parser::parseexpr() {
     trace t1("expr", toks_);
     if (toks_[0].type() == lexer::name) {
-         trace t3("name", toks_);
-         std::string s = toks_[0].str();
-         toks_.consume();
-         var& v = syms[s];
-         if (toks_[0].type() == '=') {
-             trace t2("assign", toks_);
-             toks_.consume();
-             v = parseexpr();
-         }
-         else if (toks_[0].type() == '(') {
-             trace t4("fn", toks_);
-             vector<var> args;
-             if (toks_[1].type() == ')') {
-                 toks_.consume();
-                 toks_.consume();
-             }
-             else {
-                 trace t5("args", toks_);
-                 do {
-                     toks_.consume();
-                     var e = parseexpr();
-                     args.push_back(e);
-                 } while (toks_[0].type() == ',');
-                 match(')');
-             }
-             return callfn(v, args);
-         }
-         else if (toks_[0].type() == '[') {
-             var r = parseexpr();
-             return crop(v.getmemory(), r.getrange());
-         }
-
-         return v;
+         return parsenameexpr();
     }
-    else if (toks_[0].type() == '[') {
-        mem::range r = parserange();
+    if (toks_[0].type() == '[') {
+        var r = parserangeexpr();
         return r;
     }
-    else if (toks_[0].type() == lexer::num) {
+    if (toks_[0].type() == lexer::num) {
          trace t3("num", toks_);
-         number n = readnumber(toks_[0].str());
+         var n = readnumber(toks_[0].str());
          toks_.consume();
          return n;
     }
-    else if (toks_[0].type() == lexer::str) {
+    if (toks_[0].type() == lexer::str) {
          trace t3("str", toks_);
          std::string s = toks_[0].str();
          toks_.consume();
          return s;
     }
-    else {
-         trace t4("unexpected", toks_);
-         parseerror("unexpected");
-    }
+
+    parseerror("unexpected");
     return var();
 }
 
-mem::range
-parser::parserange() {
+var
+parser::parsenameexpr() {
+    trace t1("nameexpr", toks_);
+    var& v = syms[toks_[0].str()];
+    toks_.consume();
+    if (toks_[0].type() == '(') {
+        toks_.consume();
+        vector<var> args;
+
+        if (toks_[0].type() != ')')
+        {
+           for (;;) {
+               var e = parseexpr();
+               args.push_back(e);
+               if (toks_[0].type() == ')')
+                   break;
+               if (toks_[0].type() != ',')
+                   parseerror("no , in arglist");
+               toks_.consume();
+           }
+        }
+        match(')');
+        return v.getfunction()(args);
+    }
+    if (toks_[0].type() == '[') {
+        var r = parseexpr();
+        return crop(v.getmemory(), r.getrange());
+    }
+    else if (toks_[0].type() == '=') {
+        toks_.consume();
+        v = parseexpr();
+    }
+    return v;
+}
+
+var
+parser::parseprimaryexpr() {
+    trace t1("prim", toks_);
+    if (toks_[0].type() == lexer::num) {
+         var v = readnumber(toks_[0].str());
+         toks_.consume();
+         return v;
+    }
+    if (toks_[0].type() == lexer::name)
+         return parsenameexpr();
+    if (toks_[0].type() == ')') 
+        return parseparenexpr();
+    parseerror("invalid primary expression");
+    return var();
+}
+
+var
+parser::parseparenexpr()
+{
+    toks_.consume();
+    var v = parseexpr();
+    if (toks_[0].type() != ')')
+        parse_error("unterminated ( expr");
+    toks_.consume();
+    return v;
+}
+
+var
+parser::parserangeexpr() {
     trace t1("range", toks_);
     match('[');
     mem::addr min = parseexpr().getnumber();

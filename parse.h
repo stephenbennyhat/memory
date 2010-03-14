@@ -31,7 +31,7 @@ public:
         parsefile();
     }
 private:
-    enum { debug = 0 };
+    static bool const interactive = 0;
 
     lexer lex_;
     tokstream toks_;
@@ -47,24 +47,15 @@ private:
 
     void checktype(var::vartype t1, var::vartype t2) const;
 
-    void parsefile();
-    void parsestmt();
+    var::var parsefile();
+    var::var parsestmt();
     var::var parseexpr();
-    mem::range parserange();
+    var::var parseprimaryexpr();
+    var::var parseparenexpr();
+    var::var parsenameexpr();
+    var::var parserangeexpr();
 
     void parseerror(std::string s);
-
-
-    struct trace {
-        trace(std::string s, tokstream& ts) : s_(s), ts_(ts) {
-            if (debug) std::cout << "enter: " << s_ << " " << ts_ << std::endl;
-        }
-        ~trace() {
-            if (debug) std::cout << "exit: " << s_ << " " << ts_ << std::endl;
-        }
-        std::string s_;
-        tokstream& ts_;
-    };
 };
 
 } // namespace

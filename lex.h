@@ -68,9 +68,13 @@ public:
     }
     tokstream operator=(tokstream const&);
     virtual ~tokstream();
-    token operator[](int);
+    token operator[](int i);
     void consume();
+    void consumeuntil(int t);
     void print(std::ostream& os) const;
+
+    static int const eof = -1;
+    static int const null = 0;
 private:
     void load() { toks_.push_back(lb_.next()); }
     lexer_base& lb_;
@@ -86,9 +90,7 @@ std::ostream& operator<<(std::ostream& os, tokstream& ts)
 
 struct lexer : public lexer_base {
     enum toktype {
-        null = 0,
-        eoftok = 65536,
-        str,
+        str = 65536,
         num,
         dotdot,
         name,
