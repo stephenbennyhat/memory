@@ -50,7 +50,9 @@ parser::parsefile() {
                if (errcnt++ > 3) throw;
                std::cout << "continuing..." << std::endl;
                toks_.consumeuntil(';');
+               continue;
            }
+           throw;
         }
     }
     return v;
@@ -71,27 +73,25 @@ parser::parsestmt() {
 var
 parser::parseexpr() {
     trace t1("expr", toks_);
-    if (toks_[0].type() == lexer::name) {
-         return parsenameexpr();
-    }
-    if (toks_[0].type() == '[') {
-        var r = parserangeexpr();
-        return r;
-    }
-    if (toks_[0].type() == lexer::num) {
-         trace t3("num", toks_);
-         var n = readnumber(toks_[0].str());
-         toks_.consume();
-         return n;
-    }
-    if (toks_[0].type() == lexer::str) {
-         trace t3("str", toks_);
-         std::string s = toks_[0].str();
-         toks_.consume();
-         return s;
-    }
+    var v = parseprimaryexpr();
 
-    parseerror("unexpected");
+    return v;
+}
+
+var
+parser::parseprimaryexpr() {
+    trace t1("prim", toks_);
+    if (toks_[0].type() == lexer::num)
+         return parsenumberexpr();
+    if (toks_[0].type() == lexer::str)
+         return parsestringexpr();
+    if (toks_[0].type() == lexer::name)
+         return parsenameexpr();
+    if (toks_[0].type() == '(') 
+        return parseparenexpr();
+    if (toks_[0].type() == '[') 
+        return parserangeexpr();
+    parseerror("invalid primary expression");
     return var();
 }
 
@@ -103,7 +103,6 @@ parser::parsenameexpr() {
     if (toks_[0].type() == '(') {
         toks_.consume();
         vector<var> args;
-
         if (toks_[0].type() != ')')
         {
            for (;;) {
@@ -123,27 +122,11 @@ parser::parsenameexpr() {
         var r = parseexpr();
         return crop(v.getmemory(), r.getrange());
     }
-    else if (toks_[0].type() == '=') {
+    if (toks_[0].type() == '=') {
         toks_.consume();
         v = parseexpr();
     }
     return v;
-}
-
-var
-parser::parseprimaryexpr() {
-    trace t1("prim", toks_);
-    if (toks_[0].type() == lexer::num) {
-         var v = readnumber(toks_[0].str());
-         toks_.consume();
-         return v;
-    }
-    if (toks_[0].type() == lexer::name)
-         return parsenameexpr();
-    if (toks_[0].type() == ')') 
-        return parseparenexpr();
-    parseerror("invalid primary expression");
-    return var();
 }
 
 var
@@ -166,6 +149,18 @@ parser::parserangeexpr() {
     mem::addr max = parseexpr().getnumber();
     match(']');
     return mem::range(min, max);
+}
+
+var
+parser::parsestringexpr() {
+    toks_.consume();
+    return toks_[-1].str();
+}
+
+var
+parser::parsenumberexpr() {
+    toks_.consume();
+    return readnumber(toks_[-1].str());
 }
 
 void

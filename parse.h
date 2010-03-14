@@ -54,6 +54,8 @@ private:
     var::var parseparenexpr();
     var::var parsenameexpr();
     var::var parserangeexpr();
+    var::var parsestringexpr();
+    var::var parsenumberexpr();
 
     void parseerror(std::string s);
 };
