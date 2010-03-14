@@ -29,14 +29,9 @@ parser::expect(int t) {
 }
 
 void
-parser::consume() {
-    toks_.consume();
-}
-
-void
 parser::match(int t) {
     expect(t);
-    consume();
+    toks_.consume();
 }
 
 void
@@ -45,7 +40,7 @@ parser::eatuntil(int stop) {
     do {
         t = toks_[0].type();
         if (debug) std::cout << "eating: " << toks_[0] << std::endl;
-        consume();
+        toks_.consume();
     }
     while (stop != t && stop != lexer::eoftok);
 }
@@ -95,24 +90,24 @@ parser::parseexpr() {
     if (toks_[0].type() == lexer::name) {
          trace t3("name", toks_);
          std::string s = toks_[0].str();
-         consume();
+         toks_.consume();
          var& v = syms[s];
          if (toks_[0].type() == '=') {
              trace t2("assign", toks_);
-             consume();
+             toks_.consume();
              v = parseexpr();
          }
          else if (toks_[0].type() == '(') {
              trace t4("fn", toks_);
              vector<var> args;
              if (toks_[1].type() == ')') {
-                 consume();
-                 consume();
+                 toks_.consume();
+                 toks_.consume();
              }
              else {
                  trace t5("args", toks_);
                  do {
-                     consume();
+                     toks_.consume();
                      var e = parseexpr();
                      args.push_back(e);
                  } while (toks_[0].type() == ',');
@@ -134,13 +129,13 @@ parser::parseexpr() {
     else if (toks_[0].type() == lexer::num) {
          trace t3("num", toks_);
          number n = readnumber(toks_[0].str());
-         consume();
+         toks_.consume();
          return n;
     }
     else if (toks_[0].type() == lexer::str) {
          trace t3("str", toks_);
          std::string s = toks_[0].str();
-         consume();
+         toks_.consume();
          return s;
     }
     else {

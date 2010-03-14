@@ -43,7 +43,6 @@ private:
 
     void expect(int t);
     void eatuntil(int t);
-    void consume();
     void match(int t);
 
     void checktype(var::vartype t1, var::vartype t2) const;
