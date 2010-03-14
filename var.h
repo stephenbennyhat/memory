@@ -2,13 +2,15 @@
 #define VAR_H
 
 #include <vector>
+#include <tr1/functional>
 #include "mem.h"
 #include "lex.h"
 
 namespace memory {
 
 class var;
-typedef var fn(std::vector<var> const&);
+
+typedef std::tr1::function<var (std::vector<var> const&)> fn;
 
 class var {
 public:
@@ -39,7 +41,7 @@ public:
     var(mem::range r) : t_(trange), r_(r) {}
     var(number r) : t_(tnumber), n_(r) {}
     var(std::string s) : t_(tstring), s_(s) {}
-    var(fn* f) : t_(tfunction), f_(f) {}
+    var(fn f) : t_(tfunction), f_(f) {}
 
     vartype type() const { return t_; }
 
@@ -75,33 +77,28 @@ public:
         check(tstring);
         return s_;
     }
-    fn* &getfunction() {
+    fn &getfunction() {
         check(tfunction);
         return f_;
     }
-    fn* const& getfunction() const {
+    fn const& getfunction() const {
         check(tfunction);
         return f_;
     }
-
     void check(vartype t) const {
         if (t != t_) {
             throw type_error("type error", t, t_);
         }
     }
     static std::string typestr(vartype t);
-
-
 private:
     vartype t_;
-
     // in a better world i'd hold these by pointer to derived type.
     mem::memory m_;
     mem::range r_;
     number n_;
     std::string s_;
-    fn* f_;
-
+    fn f_;
 public:
     void print(std::ostream& os) const;
 };

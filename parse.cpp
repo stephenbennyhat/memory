@@ -7,11 +7,11 @@ using std::vector;
 namespace memory {
 
 parser::parser(std::istream& os) : lex_(os) {
-    syms["read"] = readfn;
-    syms["print"] = printfn;
-    syms["write"] = writefn;
-    syms["crc16"] = crc16fn;
-    syms["range"] = rangefn;
+    syms["read"] = var(readfn);
+    syms["print"] = var(printfn);
+    syms["write"] = var(writefn);
+    syms["crc16"] = var(crc16fn);
+    syms["range"] = var(rangefn);
 }
 
 void
@@ -75,7 +75,7 @@ callfn(var v, vector<var> const& args, bool debug = false) {
         }
         std::cout << "]" << std::endl;
     }
-    return (*v.getfunction())(args);
+    return v.getfunction()(args);
 }
 
 void
