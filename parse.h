@@ -34,6 +34,7 @@ private:
     enum { debug = 0 };
 
     lexer lex_;
+    tokstream toks_;
 
     typedef std::map<std::string, var::var> symtab;
     symtab syms;
@@ -45,7 +46,7 @@ private:
     void consume();
     void match(int t);
 
-    void checktype(var::var::vartype t1, var::var::vartype t2) const;
+    void checktype(var::vartype t1, var::vartype t2) const;
 
     void parsefile();
     void parsestmt();

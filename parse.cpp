@@ -6,7 +6,7 @@ using std::vector;
 
 namespace memory {
 
-parser::parser(std::istream& os) : lex_(os) {
+parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
     syms["read"] = var(readfn);
     syms["print"] = var(printfn);
     syms["write"] = var(writefn);
@@ -25,12 +25,12 @@ parser::printsymtab(std::ostream& os) const {
 
 void
 parser::expect(int t) {
-    if (lex_[0].type() != t) parse_error("unexpected", lex_[0]);
+    if (toks_[0].type() != t) parse_error("unexpected", toks_[0]);
 }
 
 void
 parser::consume() {
-    lex_.consume();
+    toks_.consume();
 }
 
 void
@@ -43,8 +43,8 @@ void
 parser::eatuntil(int stop) {
     int t;
     do {
-        t = lex_[0].type();
-        if (debug) std::cout << "eating: " << lex_[0] << std::endl;
+        t = toks_[0].type();
+        if (debug) std::cout << "eating: " << toks_[0] << std::endl;
         consume();
     }
     while (stop != t && stop != lexer::eoftok);
@@ -53,7 +53,7 @@ parser::eatuntil(int stop) {
 void
 parser::parsefile() {
     int errcnt = 0;
-    while (lex_[0].type() != lexer::eoftok) {
+    while (toks_[0].type() != lexer::eoftok) {
         try {
             parsestmt();
         }
@@ -80,9 +80,9 @@ callfn(var v, vector<var> const& args, bool debug = false) {
 
 void
 parser::parsestmt() {
-    trace t1("stmt", lex_);
+    trace t1("stmt", toks_);
     syms["_"] = parseexpr();
-    if (lex_[0].type() == lexer::eoftok) {
+    if (toks_[0].type() == lexer::eoftok) {
         return;
     }
     match(';');
@@ -91,60 +91,60 @@ parser::parsestmt() {
 
 var
 parser::parseexpr() {
-    trace t1("expr", lex_);
-    if (lex_[0].type() == lexer::name) {
-         trace t3("name", lex_);
-         std::string s = lex_[0].str();
+    trace t1("expr", toks_);
+    if (toks_[0].type() == lexer::name) {
+         trace t3("name", toks_);
+         std::string s = toks_[0].str();
          consume();
          var& v = syms[s];
-         if (lex_[0].type() == '=') {
-             trace t2("assign", lex_);
+         if (toks_[0].type() == '=') {
+             trace t2("assign", toks_);
              consume();
              v = parseexpr();
          }
-         else if (lex_[0].type() == '(') {
-             trace t4("fn", lex_);
+         else if (toks_[0].type() == '(') {
+             trace t4("fn", toks_);
              vector<var> args;
-             if (lex_[1].type() == ')') {
+             if (toks_[1].type() == ')') {
                  consume();
                  consume();
              }
              else {
-                 trace t5("args", lex_);
+                 trace t5("args", toks_);
                  do {
                      consume();
                      var e = parseexpr();
                      args.push_back(e);
-                 } while (lex_[0].type() == ',');
+                 } while (toks_[0].type() == ',');
                  match(')');
              }
              return callfn(v, args);
          }
-         else if (lex_[0].type() == '[') {
+         else if (toks_[0].type() == '[') {
              var r = parseexpr();
              return crop(v.getmemory(), r.getrange());
          }
 
          return v;
     }
-    else if (lex_[0].type() == '[') {
+    else if (toks_[0].type() == '[') {
         mem::range r = parserange();
         return r;
     }
-    else if (lex_[0].type() == lexer::num) {
-         trace t3("num", lex_);
-         number n = readnumber(lex_[0].str());
+    else if (toks_[0].type() == lexer::num) {
+         trace t3("num", toks_);
+         number n = readnumber(toks_[0].str());
          consume();
          return n;
     }
-    else if (lex_[0].type() == lexer::str) {
-         trace t3("str", lex_);
-         std::string s = lex_[0].str();
+    else if (toks_[0].type() == lexer::str) {
+         trace t3("str", toks_);
+         std::string s = toks_[0].str();
          consume();
          return s;
     }
     else {
-         trace t4("unexpected", lex_);
+         trace t4("unexpected", toks_);
          parseerror("unexpected");
     }
     return var();
@@ -152,7 +152,7 @@ parser::parseexpr() {
 
 mem::range
 parser::parserange() {
-    trace t1("range", lex_);
+    trace t1("range", toks_);
     match('[');
     mem::addr min = parseexpr().getnumber();
     match(lexer::dotdot);

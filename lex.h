@@ -19,6 +19,11 @@ struct coord {
     coord() : line(1), chr(0) {}
 };
 
+inline
+std::ostream& operator<<(std::ostream& os, coord const& c) {
+    return os << c.line << ':' << c.chr;
+}
+
 struct token {
     int type() const { return type_; }
     std::string str() const { return s_; }
@@ -43,35 +48,33 @@ private:
 
 std::ostream& operator<<(std::ostream& os, token const& tok);
 
+struct lexer_error : public std::exception {
+   lexer_error(std::string const& s) : s_(s) {}
+   ~lexer_error() throw() {}
+   std::string s_;
+   virtual char const *what() const throw() { return s_.c_str(); }
+};
+
+class lexer_base {
+public:
+   virtual token next() = 0;
+   virtual ~lexer_base() {}
+};
+
 class tokstream {
 public:
-    tokstream(std::istream& is) : is_(is) {
-        token t;
-        toks.push_back(t);
+    tokstream(lexer_base& lb) : lb_(lb) {
+        toks_.push_back(token());
     }
+    tokstream operator=(tokstream const&);
     virtual ~tokstream();
     token operator[](int);
     void consume();
     void print(std::ostream& os) const;
-protected:
-    bool eof() { return !is_; }
-    void putback() { is_.putback(ch_); }
-    int getchar();
-    coord pos() { return pos_; }
 private:
-    enum { debug = 0 } ;
-    void load() {
-        token t = fetchnext();
-        toks.push_back(t);
-        if (debug) std::cout << t << std::endl;
-    }
-
-    virtual token fetchnext() = 0;
-
-    std::istream& is_;
-    coord pos_;
-    std::deque<token> toks;
-    char ch_;
+    void load() { toks_.push_back(lb_.next()); }
+    lexer_base& lb_;
+    std::deque<token> toks_;
 };
 
 inline
@@ -81,28 +84,22 @@ std::ostream& operator<<(std::ostream& os, tokstream& ts)
     return os;
 }
 
-struct lexer : public tokstream {
-    struct lexer_error : public std::exception {
-       lexer_error(std::string const& s) : s_(s) {}
-       ~lexer_error() throw() {}
-       std::string s_;
-       virtual char const *what() const throw() {
-           return s_.c_str();
-       }
-    };
-
+struct lexer : public lexer_base {
     enum toktype {
+        null = 0,
         eoftok = 65536,
         str,
         num,
         dotdot,
         name,
-        null = 0,
     };
-    explicit lexer(std::istream& is) : tokstream(is) {}
+    explicit lexer(std::istream& is) : is_(is) {}
     virtual ~lexer() {}
+    virtual token next();
 private:
-    virtual token fetchnext();
+    std::istream& is_;
+    coord pos_;
+    int getchar();
 };
 
 bool validnumber(std::string s);
