@@ -9,12 +9,20 @@ using tracer::trace;
 
 namespace memory {
 
-var add(var v1, var v2) {
+var add(var const& v1, var const& v2) {
     return v1.getnumber() + v2.getnumber(); //XXX
 }
 
-var mul(var v1, var v2) {
+var mul(var const& v1, var const& v2) {
     return v1.getnumber() * v2.getnumber(); //XXX
+}
+
+var mkrange(var const& v1, var const& v2) {
+    return mem::range(v1.getnumber(), v2.getnumber());
+}
+
+var index(var const& v1, var const& v2) {
+    return crop(v1.getmemory(), v2.getrange());
 }
 
 parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
@@ -26,6 +34,7 @@ parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
 
     ops['+'] = op(20, add);
     ops['*'] = op(40, mul);
+    ops[lexer::dotdot] = op (50, mkrange);
 }
 
 void
@@ -131,8 +140,6 @@ parser::parseprimaryexpr() {
          return parsenameexpr();
     if (toks_[0].type() == '(') 
         return parseparenexpr();
-    if (toks_[0].type() == '[') 
-        return parserangeexpr();
     parseerror("invalid primary expression");
     return var();
 }
@@ -161,8 +168,7 @@ parser::parsenameexpr() {
         return v.getfunction()(args);
     }
     if (toks_[0].type() == '[') {
-        var r = parseexpr();
-        return crop(v.getmemory(), r.getrange());
+        return parseindexexpr(v);
     }
     if (toks_[0].type() == '=') {
         toks_.consume();
@@ -183,14 +189,12 @@ parser::parseparenexpr()
 }
 
 var
-parser::parserangeexpr() {
+parser::parseindexexpr(var const& v) {
     trace t1("range", toks_);
     match('[');
-    mem::addr min = parseexpr().getnumber();
-    match(lexer::dotdot);
-    mem::addr max = parseexpr().getnumber();
+    var r = parseexpr();
     match(']');
-    return mem::range(min, max);
+    return index(v, r);
 }
 
 var

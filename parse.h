@@ -59,8 +59,8 @@ private:
     var::var parseexpr();
     var::var parseprimaryexpr();
     var::var parseparenexpr();
+    var::var parseindexexpr(var const& v);
     var::var parsenameexpr();
-    var::var parserangeexpr();
     var::var parsestringexpr();
     var::var parsenumberexpr();
     var::var parsebinoprhs(int, var);

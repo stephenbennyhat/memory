@@ -27,7 +27,7 @@ public:
         type_error(std::string s, vartype exp, vartype was) {
             s_ = "type error: " + typestr(was) + " != " + typestr(exp);
             if (!s_.empty())
-                s += ": " +  s;
+                s_ += ": " +  s;
         }
         virtual char const *what() throw() { return s_.c_str(); }
         ~type_error() throw() {}
