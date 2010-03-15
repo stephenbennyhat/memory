@@ -39,7 +39,7 @@ void
 writemoto(std::ostream& os, memory const& mem, int addrlen, int maxline)
 {
     std::vector<byte> v;
-    addr pa = mem.getrange().min();
+    addr pa = mem.getrange().begin();
     addr a = pa;
 
     memory::const_iterator end = mem.end();

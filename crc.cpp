@@ -49,7 +49,8 @@ crc16(memory const& m, uint16 init) {
 
     if (!m.contiguous())
         throw std::out_of_range("crc16");
-    for(mem::addr a = m.getrange().min(); a < m.getrange().max(); a++) {
+
+    for(addr a = m.getrange().begin(); a != m.getrange().end(); a++) {
         uint16 tmp = (crc >> 8) ^ m[a];
         crc = (crc << 8) ^ crc16tab[tmp];
     }

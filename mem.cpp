@@ -134,7 +134,7 @@ memory::print(std::ostream& os, bool verbose) const {
 bool operator==(memory const& m1, memory const& m2) {
     if (m1.getrange() != m2.getrange())
         return false;
-    for (addr a = m1.getrange().min(); a < m1.getrange().max(); a++)
+    for (addr a = m1.getrange().begin(); a < m1.getrange().end(); a++)
         if (m1[a] != m2[a])
             return false;
     return true;
@@ -148,7 +148,7 @@ fill(memory const& m, byte v) {
 memory
 fill(memory const& m, range r, byte v) {
     memory nm = m;
-    for (addr a = r.min(); a < r.max(); ++a) {
+    for (addr a = r.begin(); a < r.end(); ++a) {
         if (!m.includes(a)) {
             nm.insert(a, v);
         }
@@ -160,7 +160,7 @@ fill(memory const& m, range r, byte v) {
 memory
 crop(memory const& m, range r) {
     memory nm;
-    for (addr a = r.min(); a < r.max(); ++a) {
+    for (addr a = r.begin(); a < r.end(); ++a) {
         if (m.includes(a)) {
             nm.insert(a, m[a]);
         }
