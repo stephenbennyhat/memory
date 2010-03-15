@@ -88,6 +88,10 @@ lexer::next() {
         case ';':
         case '=':
         case ',':
+        case '+':
+        case '-':
+        case '*':
+        case '/':
         case '[': case ']':
         case '(': case ')':
         case '{': case '}':

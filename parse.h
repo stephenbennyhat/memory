@@ -3,6 +3,7 @@
 
 #include <stdexcept>
 #include <map>
+#include <tr1/functional>
 #include <assert.h>
 #include <ctype.h>
 #include "mem.h"
@@ -39,7 +40,13 @@ private:
     typedef std::map<std::string, var::var> symtab;
     symtab syms;
 
+    typedef std::tr1::function<var (var const&, var const&)> opfn;
+    typedef std::pair<int, opfn> op; // prec, fn
+    typedef std::map<int, op> optab;
+    optab ops;
+
     void printsymtab(std::ostream& os) const;
+    void printops(std::ostream& os) const;
 
     void expect(int t);
     void eatuntil(int t);
@@ -56,6 +63,7 @@ private:
     var::var parserangeexpr();
     var::var parsestringexpr();
     var::var parsenumberexpr();
+    var::var parsebinoprhs(int, var);
 
     void parseerror(std::string s);
 };

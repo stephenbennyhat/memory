@@ -4,9 +4,18 @@
 #include "trace.h"
 
 using std::vector;
+using std::pair;
 using tracer::trace;
 
 namespace memory {
+
+var add(var v1, var v2) {
+    return v1.getnumber() + v2.getnumber(); //XXX
+}
+
+var mul(var v1, var v2) {
+    return v1.getnumber() * v2.getnumber(); //XXX
+}
 
 parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
     syms["read"] = var(readfn);
@@ -14,6 +23,9 @@ parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
     syms["write"] = var(writefn);
     syms["crc16"] = var(crc16fn);
     syms["range"] = var(rangefn);
+
+    ops['+'] = op(20, add);
+    ops['*'] = op(40, mul);
 }
 
 void
@@ -23,6 +35,13 @@ parser::printsymtab(std::ostream& os) const {
    for (symtab::const_iterator i = syms.begin(); i != end; ++i) {
        os << " syms[" << i->first << "] = " << i->second << std::endl;
    }
+}
+
+void
+parser::printops(std::ostream& os) const {
+    for (optab::const_iterator o = ops.begin(); o != ops.end(); o++) {
+        std::cout << o->first << "=[" << o->second.first << "," << o->second.second << "]" << std::endl;
+    }
 }
 
 void
@@ -75,7 +94,30 @@ parser::parseexpr() {
     trace t1("expr", toks_);
     var v = parseprimaryexpr();
 
-    return v;
+    return parsebinoprhs(0, v);
+}
+
+/*
+ * this mechanism pinched from the llvm tutorial
+ * http://llvm.org/docs/tutorial/LangImpl2.html
+ */
+var
+parser::parsebinoprhs(int exprprec, var lhs) {
+    trace t1("binop", toks_);
+    for (;;) {
+        trace t1("binoploop", toks_);
+        int type = toks_[0].type();
+        if (ops.count(type) == 0 || ops[type].first < exprprec)
+            return lhs;
+        toks_.consume();
+        var rhs = parseprimaryexpr();
+        int ntype = toks_[0].type();
+        if (ops.count(ntype) == 0 || ops[type].first < ops[ntype].first)
+            rhs = parsebinoprhs(ops[type].first+1, rhs);
+        opfn fn(ops[type].second);
+        lhs = fn(lhs, rhs);
+    }
+    return lhs;
 }
 
 var
