@@ -29,7 +29,7 @@ public:
             if (!s_.empty())
                 s_ += ": " +  s;
         }
-        virtual char const *what() throw() { return s_.c_str(); }
+        virtual char const *what() const throw() { return s_.c_str(); }
         ~type_error() throw() {}
     private:
         std::string s_;
@@ -87,7 +87,7 @@ public:
     }
     void check(vartype t) const {
         if (t != t_) {
-            throw type_error("type error", t, t_);
+            throw type_error("incompatible", t, t_);
         }
     }
     static std::string typestr(vartype t);

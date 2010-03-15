@@ -32,5 +32,6 @@ main(int argc, char **argv) {
     }
     catch (std::exception const& e) {
         std::cerr << e.what() << std::endl;
+        exit(EXIT_FAILURE);
     }
 }

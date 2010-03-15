@@ -21,7 +21,7 @@ public:
         std::string s_;
         token t_;
 
-        virtual char const *what() throw () {
+        virtual char const *what() const throw () {
             return s_.c_str();
         }
     };
@@ -48,8 +48,6 @@ private:
     void printsymtab(std::ostream& os) const;
     void printops(std::ostream& os) const;
 
-    void expect(int t);
-    void eatuntil(int t);
     void match(int t);
 
     void checktype(var::vartype t1, var::vartype t2) const;

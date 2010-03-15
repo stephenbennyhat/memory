@@ -54,34 +54,16 @@ parser::printops(std::ostream& os) const {
 }
 
 void
-parser::expect(int t) {
-    if (toks_[0].type() != t) parse_error("unexpected", toks_[0]);
-}
-
-void
 parser::match(int t) {
-    expect(t);
+    if (toks_[0].type() != t) parse_error("unexpected", toks_[0]);
     toks_.consume();
 }
 
 var
 parser::parsefile() {
-    int errcnt = 0;
     var v;
     while (toks_[0].type() != tokstream::eof) {
-        try {
-            v = parsestmt();
-        }
-        catch (std::exception const& e) {
-           std::cout << e.what() << std::endl;
-           if (interactive) {
-               if (errcnt++ > 3) throw;
-               std::cout << "continuing..." << std::endl;
-               toks_.consumeuntil(';');
-               continue;
-           }
-           throw;
-        }
+        v = parsestmt();
     }
     return v;
 }
