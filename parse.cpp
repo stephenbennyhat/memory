@@ -8,32 +8,6 @@ using std::pair;
 using tracer::trace;
 
 namespace memory {
-    var add(var const& v1, var const& v2) {
-        if (v1.is(var::tnumber) && v2.is(var::tnumber))
-             return v1.getnumber() + v2.getnumber();
-        if (v1.is(var::tmemory) && v2.is(var::tmemory))
-             return join(v1.getmemory(), v2.getmemory());
-        throw new var::type_error(v1.type(), v2.type(), "cannot add");
-    }
-
-    var mul(var const& v1, var const& v2) {
-        return v1.getnumber() * v2.getnumber(); //XXX
-    }
-
-    var index(var const& v1, var const& v2) {
-        if (v1.is(var::tmemory)) {
-            if (v2.is(var::trange))
-                return crop(v1.getmemory(), v2.getrange());
-            if (v2.is(var::tnumber))
-                return v1.getmemory()[v2.getnumber()];
-        }
-        throw new var::type_error(v1.type(), v2.type(), "cannot index");
-    }
-
-    var mkrange(var const& v1, var const& v2) {
-        return mem::range(v1.getnumber(), v2.getnumber());
-    }
-
     parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
         syms["read"] = var(readfn);
         syms["print"] = var(printfn);
@@ -100,10 +74,8 @@ namespace memory {
         return parsebinoprhs(0, v);
     }
 
-    /*
-     * this mechanism pinched from the llvm tutorial
-     * http://llvm.org/docs/tutorial/LangImpl2.html
-     */
+    // this mechanism pinched from the llvm tutorial
+    // http://llvm.org/docs/tutorial/LangImpl2.html
     var
     parser::parsebinoprhs(int exprprec, var lhs) {
         trace t1("binop", toks_);
