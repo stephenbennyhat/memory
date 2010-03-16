@@ -10,5 +10,6 @@ namespace memory {
     var::var crc16fn(std::vector<var::var> const& args);
     var::var writefn(std::vector<var::var> const& args);
     var::var rangefn(std::vector<var::var> const& args);
+    var::var offsetfn(std::vector<var::var> const& args);
 }
 #endif

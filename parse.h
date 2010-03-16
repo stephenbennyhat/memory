@@ -11,7 +11,6 @@
 #include "var.h"
 
 namespace memory {
-
     class parser {
     public:
         struct parse_error : public std::exception {
@@ -25,7 +24,6 @@ namespace memory {
         };
 
         parser(std::istream& os);
-
         void parse() { parsefile(); }
     private:
         static bool const interactive = 0;
@@ -61,5 +59,5 @@ namespace memory {
    
         void parseerror(std::string s);
     };
-} // namespace
+}
 #endif

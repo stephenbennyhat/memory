@@ -1,9 +1,18 @@
 m=read("bootloader_SWE1.mhx");
 print(m);
 r=0xE0000..0xF0000;
+print("r=", r);
 m[0xE0000..0xF0000];
 print("CRC: ", r, " ", crc16(_));
 print("CRC: ", range(m), " ", crc16(m));
 
 e=read("example.srec");
 print(_);
+
+print("0: ", m[0xE0000]);
+print("1: ", m[0xE0001]);
+
+print(offset(e, 1));
+
+x=m+e;
+print(x);

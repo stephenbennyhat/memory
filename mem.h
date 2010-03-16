@@ -22,6 +22,7 @@ namespace mem {
         addr execaddr_;
 
         byte const *find(addr a) const;
+        mmap::const_iterator findblock(addr a) const;
     public:
         byte& insert(addr a, byte b = byte());
         byte  operator[](addr a) const;
@@ -39,32 +40,35 @@ namespace mem {
         addr getexecaddr() const { return execaddr_; }
         void setexecaddr(addr a) { execaddr_ = a; }
 
-        class memory_const_iterator :
-            public std::iterator<std::input_iterator_tag,
-                                 byte,
-                                 size_t,
-                                 byte const*,
-                                 byte const&>
+        class memory_const_iterator
         {
+            typedef size_t difference_type;
+            typedef byte value_type;
+            typedef byte const* pointer;
+            typedef byte const& reference;
+            typedef std::input_iterator_tag iterator_category;
+
             typedef std::pair<addr,byte> pab;
-            memory const *m_;
-            addr          a_;
-            mutable pab   p_; // just so operator-> works.
+
+            mmap::const_iterator end_;
+            mmap::const_iterator bi_;
+            size_t off_;
+
+            mutable pab p_; // just so operator-> works.
         public:
-            memory_const_iterator(memory const& m, addr a) : m_(&m), a_(a) {}
-            memory_const_iterator(memory const& m) : m_(&m), a_(m.getrange().begin()) {}
-            memory_const_iterator() : m_(0), a_(0) {}
+            memory_const_iterator(memory const& m, addr a);
+            memory_const_iterator(memory const& m);
+            memory_const_iterator();
 
             pab *operator->() const {
-                return &(p_ = pab(a_, (*m_)[a_]));
+                addr a = bi_->first + off_;
+                byte b = bi_->second[off_];
+                return &(p_ = pab(a, b));
             }
-            pab operator*() const {
-                return p_ = pab(a_, (*m_)[a_]);
-            }
+            pab operator*() const { return *operator->(); }
 
             memory_const_iterator& operator++() {
-                next();
-                return *this;
+                return next();
             }
             memory_const_iterator operator++(int) {
                 memory_const_iterator tmp = *this;
@@ -73,24 +77,18 @@ namespace mem {
             }
 
             friend bool operator==(memory_const_iterator i1, memory_const_iterator i2) {
-                return i1.a_ == i2.a_;
+                return i1.bi_ == i2.bi_ && i1.off_ == i2.off_;
             }
             friend bool operator!=(memory_const_iterator i1, memory_const_iterator i2) {
                 return !(i1 == i2);
             }
         private:
-            void next() {
-                while (a_ != m_->getrange().end()) {
-                    a_++;
-                    if (m_->includes(a_))
-                        break;
-                 }
-            }
+            memory_const_iterator& next();
         };
 
         typedef memory_const_iterator const_iterator;
         memory_const_iterator begin() const {
-            return memory_const_iterator(*this, getrange().begin());
+            return memory_const_iterator(*this);
         }
         memory_const_iterator end() const {
             return memory_const_iterator(*this, getrange().end());
@@ -104,11 +102,16 @@ namespace mem {
     }
 
     bool operator==(memory const& m1, memory const& m2);
+    inline
+    bool operator!=(memory const& m1, memory const& m2) {
+        return !(m1==m2);
+    }
 
     memory fill(memory const& m, range r, byte v = 0xFF);
     memory fill(memory const& m, byte v = 0xFF);
     memory crop(memory const& m, range r);
     memory offset(memory const &m, int off);
+    memory join(memory const &m, memory const& m2);
 
     void writemoto(std::ostream& os, memory const& mem, int addrlen=4, int maxline=16);
     void readmoto(std::istream& is, memory& mem, std::string const& filename="");

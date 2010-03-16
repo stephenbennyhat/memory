@@ -10,7 +10,6 @@
 #include "mem.h"
 
 namespace memory {
-
     typedef unsigned long number;
 
     struct coord {

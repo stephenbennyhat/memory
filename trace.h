@@ -20,6 +20,5 @@ namespace tracer {
         std::string s_;
         memory::tokstream& ts_;
     };
-} // namespace
-
+}
 #endif

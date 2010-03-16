@@ -14,9 +14,12 @@ namespace mem {
        T begin() const { return begin_;}
        T end() const { return end_;}
        void extend(T a) {
-           if (empty()) { begin_ = a; end_ = a + 1;}
+           if (empty()) { begin_ = a; end_ = a + 1; return;}
            if (a > end_ + 1) end_ = a + 1;
            if (a < begin_) begin_ = a;
+       }
+       bool contains(T a) {
+           return a >= begin() && a < end();
        }
        bool empty() {
            return begin() == end();
@@ -47,5 +50,4 @@ namespace mem {
         return !(r1 == r2);
     }
 }
-
 #endif
