@@ -25,8 +25,12 @@ namespace memory {
 
         parser(std::istream& os);
         void parse() { parsefile(); }
+
+        typedef std::tr1::function<var ()> xfn;
+        typedef std::tr1::function<var (var const&, var const&)> opfn;
     private:
         static bool const interactive = 0;
+
 
         lexer lex_;
         tokstream toks_;
@@ -34,7 +38,6 @@ namespace memory {
         typedef std::map<std::string, var::var> symtab;
         symtab syms;
 
-        typedef std::tr1::function<var (var const&, var const&)> opfn;
         typedef std::pair<int, opfn> op; // prec, fn
         typedef std::map<int, op> optab;
         optab ops;
@@ -46,16 +49,16 @@ namespace memory {
 
         void checktype(var::vartype t1, var::vartype t2) const;
 
-        var::var parsefile();
-        var::var parsestmt();
-        var::var parseexpr();
-        var::var parseprimaryexpr();
-        var::var parseparenexpr();
-        var::var parseindexexpr(var const& v);
-        var::var parsenameexpr();
-        var::var parsestringexpr();
-        var::var parsenumberexpr();
-        var::var parsebinoprhs(int, var);
+        void parsefile();
+        xfn parsestmt();
+        xfn parseexpr();
+        xfn parseprimaryexpr();
+        xfn parseparenexpr();
+        xfn parseindexexpr(xfn);
+        xfn parsenameexpr();
+        xfn parsestringexpr();
+        xfn parsenumberexpr();
+        xfn parsebinoprhs(int, xfn);
    
         void parseerror(std::string s);
     };

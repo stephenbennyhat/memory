@@ -8,6 +8,69 @@ using std::pair;
 using tracer::trace;
 
 namespace memory {
+
+    template <typename T>
+    class constantly
+    {
+        T t_;
+    public:
+        constantly(T t) : t_(t) {}
+        T const& operator()() {
+            return t_;
+        };
+    };
+
+    class binder
+    {
+        var& t_;
+    public:
+        binder(var& t) : t_(t) {}
+        var& operator()() {
+            return t_;
+        };
+    };
+
+    class binopcall {
+        parser::opfn op_;
+        parser::xfn a1_;
+        parser::xfn a2_;
+    public:
+        binopcall(parser::opfn op, parser::xfn a1, parser::xfn a2) : op_(op), a1_(a1), a2_(a2) {}
+        var::var operator()() { 
+            return op_(a1_(), a2_());
+        }
+    };
+
+    class fncall {
+        typedef vector<parser::xfn> xfnv;
+        parser::xfn fn_;
+        xfnv args_;
+    public:
+        fncall(parser::xfn fn, xfnv args) : fn_(fn), args_(args) {}
+        var operator()() {
+            vector<var> vv;
+            for (xfnv::const_iterator i = args_.begin(); i != args_.end(); i++) {
+                vv.push_back((*i)());
+            }
+            return (fn_().getfunction())(vv);
+        }
+    };
+
+    struct assign {
+        binder lhs_;
+        parser::xfn rhs_;
+        assign(binder lhs, parser::xfn rhs) : lhs_(lhs), rhs_(rhs) {}
+        var operator()() {
+            var& v = lhs_();
+            return v = rhs_();
+        }
+    };
+
+    template <typename T>
+    constantly<T> mkconstantly(T t) {
+        return constantly<T>(t);
+    }
+
     parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
         syms["read"] = var(readfn);
         syms["print"] = var(printfn);
@@ -45,39 +108,34 @@ namespace memory {
         toks_.consume();
     }
 
-    var
+    void
     parser::parsefile() {
-        var v;
         while (toks_[0].type() != tokstream::eof) {
-            v = parsestmt();
+            xfn v = parsestmt();
+            syms["_"] = v();
         }
+    }
+
+    parser::xfn
+    parser::parsestmt() {
+        trace t1("stmt", toks_);
+        xfn v = parseexpr();
+        match(';');
         return v;
     }
 
-    var
-    parser::parsestmt() {
-        trace t1("stmt", toks_);
-        var v = parseexpr();
-        if (toks_[0].type() == tokstream::eof) {
-            return var();
-        }
-        match(';');
-        if (0) printsymtab(std::cout);
-        return syms["_"] = v;
-    }
-
-    var
+    parser::xfn
     parser::parseexpr() {
         trace t1("expr", toks_);
-        var v = parseprimaryexpr();
+        xfn v = parseprimaryexpr();
 
         return parsebinoprhs(0, v);
     }
 
     // this mechanism pinched from the llvm tutorial
     // http://llvm.org/docs/tutorial/LangImpl2.html
-    var
-    parser::parsebinoprhs(int exprprec, var lhs) {
+    parser::xfn
+    parser::parsebinoprhs(int exprprec, parser::xfn lhs) {
         trace t1("binop", toks_);
         for (;;) {
             trace t1("binoploop", toks_);
@@ -85,17 +143,17 @@ namespace memory {
             if (ops.count(type) == 0 || ops[type].first < exprprec)
                 return lhs;
             toks_.consume();
-            var rhs = parseprimaryexpr();
+            xfn rhs = parseprimaryexpr();
             int ntype = toks_[0].type();
             if (ops.count(ntype) == 0 || ops[type].first < ops[ntype].first)
                 rhs = parsebinoprhs(ops[type].first+1, rhs);
             opfn fn(ops[type].second);
-            lhs = fn(lhs, rhs);
+            lhs = binopcall(fn, lhs, rhs);
         }
         return lhs;
     }
 
-    var
+    parser::xfn
     parser::parseprimaryexpr() {
         trace t1("prim", toks_);
         if (toks_[0].type() == lexer::num)
@@ -107,21 +165,21 @@ namespace memory {
         if (toks_[0].type() == '(') 
             return parseparenexpr();
         parseerror("invalid primary expression");
-        return var();
+        return mkconstantly(0);
     }
 
-    var
+    parser::xfn
     parser::parsenameexpr() {
         trace t1("nameexpr", toks_);
-        var& v = syms[toks_[0].str()];
+        var &v = syms[toks_[0].str()];
         toks_.consume();
         if (toks_[0].type() == '(') {
             toks_.consume();
-            vector<var> args;
+            vector<xfn> args;
             if (toks_[0].type() != ')')
             {
                for (;;) {
-                   var e = parseexpr();
+                   xfn e = parseexpr();
                    args.push_back(e);
                    if (toks_[0].type() == ')')
                        break;
@@ -131,48 +189,48 @@ namespace memory {
                }
             }
             match(')');
-            return v.getfunction()(args);
+            return fncall(mkconstantly(v), args);
         }
         if (toks_[0].type() == '[') {
-            return parseindexexpr(v);
+            return parseindexexpr(mkconstantly(v));
         }
         if (toks_[0].type() == '=') {
             toks_.consume();
-            v = parseexpr();
+            return assign(binder(v), parseexpr());
         }
-        return v;
+        return mkconstantly(v);
     }
 
-    var
+    parser::xfn
     parser::parseparenexpr()
     {
         toks_.consume();
-        var v = parseexpr();
+        xfn v = parseexpr();
         if (toks_[0].type() != ')')
             parse_error("unterminated ( expr");
         toks_.consume();
         return v;
     }
 
-    var
-    parser::parseindexexpr(var const& v) {
+    parser::xfn
+    parser::parseindexexpr(xfn v) {
         trace t1("range", toks_);
         match('[');
-        var r = parseexpr();
+        xfn r = parseexpr();
         match(']');
-        return index(v, r);
+        return binopcall(index, v, r);
     }
 
-    var
+    parser::xfn
     parser::parsestringexpr() {
         toks_.consume();
-        return toks_[-1].str();
+        return mkconstantly(toks_[-1].str());
     }
 
-    var
+    parser::xfn
     parser::parsenumberexpr() {
         toks_.consume();
-        return readnumber(toks_[-1].str());
+        return mkconstantly(readnumber(toks_[-1].str()));
     }
 
     void
