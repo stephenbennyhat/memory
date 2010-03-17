@@ -9,13 +9,12 @@ using tracer::trace;
 
 namespace memory {
 
-    template <typename T>
     class constantly
     {
-        T t_;
+        var t_;
     public:
-        constantly(T t) : t_(t) {}
-        T const& operator()() {
+        constantly(var t) : t_(t) {}
+        var const& operator()() {
             return t_;
         };
     };
@@ -32,21 +31,21 @@ namespace memory {
 
     class binopcall {
         parser::opfn op_;
-        parser::xfn a1_;
-        parser::xfn a2_;
+        xfn a1_;
+        xfn a2_;
     public:
-        binopcall(parser::opfn op, parser::xfn a1, parser::xfn a2) : op_(op), a1_(a1), a2_(a2) {}
+        binopcall(parser::opfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
         var::var operator()() { 
             return op_(a1_(), a2_());
         }
     };
 
     class fncall {
-        typedef vector<parser::xfn> xfnv;
-        parser::xfn fn_;
+        typedef vector<xfn> xfnv;
+        xfn fn_;
         xfnv args_;
     public:
-        fncall(parser::xfn fn, xfnv args) : fn_(fn), args_(args) {}
+        fncall(xfn fn, xfnv args) : fn_(fn), args_(args) {}
         var operator()() {
             vector<var> vv;
             for (xfnv::const_iterator i = args_.begin(); i != args_.end(); i++) {
@@ -58,18 +57,13 @@ namespace memory {
 
     struct assign {
         binder lhs_;
-        parser::xfn rhs_;
-        assign(binder lhs, parser::xfn rhs) : lhs_(lhs), rhs_(rhs) {}
+        xfn rhs_;
+        assign(binder lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
         var operator()() {
             var& v = lhs_();
             return v = rhs_();
         }
     };
-
-    template <typename T>
-    constantly<T> mkconstantly(T t) {
-        return constantly<T>(t);
-    }
 
     parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
         syms["read"] = var(readfn);
@@ -116,7 +110,7 @@ namespace memory {
         }
     }
 
-    parser::xfn
+    xfn
     parser::parsestmt() {
         trace t1("stmt", toks_);
         xfn v = parseexpr();
@@ -124,7 +118,7 @@ namespace memory {
         return v;
     }
 
-    parser::xfn
+    xfn
     parser::parseexpr() {
         trace t1("expr", toks_);
         xfn v = parseprimaryexpr();
@@ -134,8 +128,8 @@ namespace memory {
 
     // this mechanism pinched from the llvm tutorial
     // http://llvm.org/docs/tutorial/LangImpl2.html
-    parser::xfn
-    parser::parsebinoprhs(int exprprec, parser::xfn lhs) {
+    xfn
+    parser::parsebinoprhs(int exprprec, xfn lhs) {
         trace t1("binop", toks_);
         for (;;) {
             trace t1("binoploop", toks_);
@@ -153,7 +147,7 @@ namespace memory {
         return lhs;
     }
 
-    parser::xfn
+    xfn
     parser::parseprimaryexpr() {
         trace t1("prim", toks_);
         if (toks_[0].type() == lexer::num)
@@ -165,10 +159,10 @@ namespace memory {
         if (toks_[0].type() == '(') 
             return parseparenexpr();
         parseerror("invalid primary expression");
-        return mkconstantly(0);
+        return constantly(0);
     }
 
-    parser::xfn
+    xfn
     parser::parsenameexpr() {
         trace t1("nameexpr", toks_);
         var &v = syms[toks_[0].str()];
@@ -189,19 +183,19 @@ namespace memory {
                }
             }
             match(')');
-            return fncall(mkconstantly(v), args);
+            return fncall(constantly(v), args);
         }
         if (toks_[0].type() == '[') {
-            return parseindexexpr(mkconstantly(v));
+            return parseindexexpr(constantly(v));
         }
         if (toks_[0].type() == '=') {
             toks_.consume();
             return assign(binder(v), parseexpr());
         }
-        return mkconstantly(v);
+        return constantly(v);
     }
 
-    parser::xfn
+    xfn
     parser::parseparenexpr()
     {
         toks_.consume();
@@ -212,7 +206,7 @@ namespace memory {
         return v;
     }
 
-    parser::xfn
+    xfn
     parser::parseindexexpr(xfn v) {
         trace t1("range", toks_);
         match('[');
@@ -221,16 +215,16 @@ namespace memory {
         return binopcall(index, v, r);
     }
 
-    parser::xfn
+    xfn
     parser::parsestringexpr() {
         toks_.consume();
-        return mkconstantly(toks_[-1].str());
+        return constantly(toks_[-1].str());
     }
 
-    parser::xfn
+    xfn
     parser::parsenumberexpr() {
         toks_.consume();
-        return mkconstantly(readnumber(toks_[-1].str()));
+        return constantly(readnumber(toks_[-1].str()));
     }
 
     void

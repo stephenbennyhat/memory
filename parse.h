@@ -26,7 +26,6 @@ namespace memory {
         parser(std::istream& os);
         void parse() { parsefile(); }
 
-        typedef std::tr1::function<var ()> xfn;
         typedef std::tr1::function<var (var const&, var const&)> opfn;
     private:
         static bool const interactive = 0;

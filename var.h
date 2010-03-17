@@ -9,6 +9,11 @@
 namespace memory {
 
 
+    class var;
+
+    typedef std::tr1::function<var (std::vector<var> const&)> fn;
+    typedef std::tr1::function<var ()> xfn;
+
     class var {
     public:
 
@@ -33,7 +38,6 @@ namespace memory {
             std::string s_;
         };
 
-        typedef std::tr1::function<var (std::vector<var> const&)> fn;
 
         var() : t_(tnull) {} // for containers
 
