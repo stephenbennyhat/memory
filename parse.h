@@ -58,6 +58,8 @@ namespace memory {
         xfn parsestringexpr();
         xfn parsenumberexpr();
         xfn parsebinoprhs(int, xfn);
+        std::vector<xfn> parsearglist();
+
     };
 }
 #endif

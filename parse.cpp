@@ -68,7 +68,7 @@ namespace memory {
             return var(*this);
         }
         // and a var
-        var operator()(vector<var> const&) {
+        var operator()(vector<var> const& args) {
              return fn_();
         }
     };
@@ -139,17 +139,22 @@ namespace memory {
         return v;
     }
 
+    //   expr
+    // | fn (args*) expr
     xfn
     parser::parseexpr() {
         trace t1("expr", toks_);
+        vector<xfn> args;
         bool b = false;
         if (toks_[0].type() == lexer::fn) {
             toks_.consume();
+            args = parsearglist();
             b = true;
         }
         xfn v = parseprimaryexpr();
         xfn e = parsebinoprhs(0, v);
         if (b) {
+            // not sure what to do with the args here.
             return delay(e);
         }
     
@@ -198,22 +203,7 @@ namespace memory {
         var &v = syms[toks_[0].str()];
         toks_.consume();
         if (toks_[0].type() == '(') {
-            toks_.consume();
-            vector<xfn> args;
-            if (toks_[0].type() != ')')
-            {
-               for (;;) {
-                   xfn e = parseexpr();
-                   args.push_back(e);
-                   if (toks_[0].type() == ')')
-                       break;
-                   if (toks_[0].type() != ',')
-                       parseerror("no , in arglist");
-                   toks_.consume();
-               }
-            }
-            match(')');
-            return fncall(constantly(v), args);
+            return fncall(constantly(v), parsearglist());
         }
         if (toks_[0].type() == '[') {
             return parseindexexpr(constantly(v));
@@ -223,6 +213,26 @@ namespace memory {
             return assign(binder(v), parseexpr());
         }
         return constantly(v);
+    }
+
+    vector<xfn>
+    parser::parsearglist() {
+        toks_.consume();
+        vector<xfn> args;
+        if (toks_[0].type() != ')')
+        {
+           for (;;) {
+               xfn e = parseexpr();
+               args.push_back(e);
+               if (toks_[0].type() == ')')
+                   break;
+               if (toks_[0].type() != ',')
+                   parseerror("no , in arglist");
+               toks_.consume();
+            }
+        }
+        match(')');
+        return args;
     }
 
     xfn
