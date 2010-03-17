@@ -99,7 +99,7 @@ namespace memory {
             return v1.getnumber() + v2.getnumber();
         if (v1.is(var::tmemory) && v2.is(var::tmemory))
             return join(v1.getmemory(), v2.getmemory());
-        throw new var::type_error(v1.type(), v2.type(), "cannot add");
+        throw var::type_error(v1.type(), v2.type(), "cannot add");
     }
 
     var
@@ -115,7 +115,7 @@ namespace memory {
             if (v2.is(var::tnumber))
                 return v1.getmemory()[v2.getnumber()];
         }
-        throw new var::type_error(v1.type(), v2.type(), "cannot index");
+        throw var::type_error(v1.type(), v2.type(), "cannot index");
     }
 
     var
