@@ -2,13 +2,12 @@
 #define VAR_H
 
 #include <vector>
+#include <list>
 #include <tr1/functional>
 #include "mem.h"
 #include "lex.h"
 
 namespace memory {
-
-
     class var;
 
     typedef std::tr1::function<var (std::vector<var> const&)> fn;
@@ -16,7 +15,6 @@ namespace memory {
 
     class var {
     public:
-
         enum vartype {
            tnull,
            tmemory,
@@ -37,7 +35,6 @@ namespace memory {
         private:
             std::string s_;
         };
-
 
         var() : t_(tnull) {} // for containers
 
@@ -114,5 +111,24 @@ namespace memory {
         return os;
     }
 
+    class symtab {
+    public:
+        var& lookup(std::string const &name);
+        var& insert(std::string const& name, var const& val);
+        symtab() { push(); }
+        void push() {
+            syms.push_front(scope());
+        }
+        void pop() {
+            syms.pop_front();
+        }
+        var& operator[](std::string const& s) {
+            return lookup(s);
+        }
+    private:
+        typedef std::map<std::string, var::var> scope;
+        typedef std::list<scope> symstype;
+        symstype syms;
+    };
 }
 #endif

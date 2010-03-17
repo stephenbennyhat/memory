@@ -79,15 +79,6 @@ namespace memory {
     }
 
     void
-    parser::printsymtab(std::ostream& os) const {
-       symtab::const_iterator end = syms.end();
-       os << "nsyms: " << syms.size() << std::endl;
-       for (symtab::const_iterator i = syms.begin(); i != end; ++i) {
-           os << " syms[" << i->first << "] = " << i->second << std::endl;
-       }
-    }
-
-    void
     parser::printops(std::ostream& os) const {
         for (optab::const_iterator o = ops.begin(); o != ops.end(); o++) {
             std::cout << o->first

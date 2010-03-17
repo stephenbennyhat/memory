@@ -34,14 +34,12 @@ namespace memory {
         lexer lex_;
         tokstream toks_;
 
-        typedef std::map<std::string, var::var> symtab;
         symtab syms;
 
         typedef std::pair<int, opfn> op; // prec, fn
         typedef std::map<int, op> optab;
         optab ops;
 
-        void printsymtab(std::ostream& os) const;
         void printops(std::ostream& os) const;
 
         void match(int t);

@@ -1,5 +1,8 @@
 #include <iostream>
+#include <string>
 #include "var.h"
+
+using std::string;
 
 namespace memory {
     void var::print(std::ostream& os) const {
@@ -35,4 +38,26 @@ namespace memory {
         case tfunction: return "function"; break;
         }
     }
+
+    var& symtab::lookup(std::string const &s) {
+        for (symstype::iterator i = syms.begin(); i != syms.end(); i++) {
+            if (i->count(s) != 0) {
+                return (*i)[s];
+            }
+        }
+        return insert(s, var());
+    }
+
+    var& symtab::insert(std::string const& s, var const& val) {
+        return syms.front()[s] = val;
+    }
+
+    //void
+    //symtab::print(std::ostream& os) const {
+        //symtab::const_iterator end = syms.end();
+        //os << "nsyms: " << syms.size() << std::endl;
+        //for (symtab::const_iterator i = syms.begin(); i != end; ++i) {
+            //os << " syms[" << i->first << "] = " << i->second << std::endl;
+        //}
+    //}
 }
