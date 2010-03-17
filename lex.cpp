@@ -2,6 +2,7 @@
 #include "var.h"
 
 using std::string;
+
 namespace memory {
     std::ostream& operator<<(std::ostream& os, token const& tok) {
         return os << "<tok: " << tok.desc() << ' ' << int(tok.type()) << ' '
@@ -41,8 +42,6 @@ namespace memory {
         while (toks_[0].type() != t && toks_[0].type() != eof)
             toks_.pop_front();
     }
-
-    //////////////////////////////////////////////////////////////
 
     int
     lexer::getchar() {
@@ -110,24 +109,25 @@ namespace memory {
                 if (is_) is_.putback(ch);
 
                 if (validnumber(s)) return token(num, s, pos_, "num");
+                if (s == "fn") return token(fn, s, pos_, "fn");
 
                 return token(name, s, pos_, "name");
             }
             s.push_back(ch);
-            throw lexer_error(string("didn't expect: ") + s);
+            throw lexer_error(string("didn't expect: \"") + s + "\"");
         }
         return token(tokstream::eof, "", pos_, "eof");
     }
 
     bool
-    validnumber(string s) {
+    validnumber(string const& s) {
         char *ep;
         (void) std::strtoul(s.c_str(), &ep, 0);
         return (*ep == 0);
     }
 
     number
-    readnumber(string s) {
+    readnumber(string const& s) {
         return std::strtoul(s.c_str(), 0, 0);
     }
 }

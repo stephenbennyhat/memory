@@ -1,3 +1,4 @@
+#include <sstream>
 #include "parse.h"
 #include "var.h"
 #include "fn.h"
@@ -8,6 +9,14 @@ using std::pair;
 using tracer::trace;
 
 namespace memory {
+    vector<var>
+    reify(vector<xfn> const &args) {
+       vector<var> vv(args.size());
+       std::transform(args.begin(), args.end(),
+                      vv.begin(),
+                      port::mem_fn(&xfn::operator())); 
+       return vv;
+    }
 
     class constantly
     {
@@ -30,34 +39,44 @@ namespace memory {
     };
 
     class binopcall {
-        parser::opfn op_;
+        opfn op_;
         xfn a1_;
         xfn a2_;
     public:
-        binopcall(parser::opfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
+        binopcall(opfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
         var::var operator()() { 
             return op_(a1_(), a2_());
         }
     };
 
     class fncall {
-        typedef vector<xfn> xfnv;
         xfn fn_;
-        xfnv args_;
+        vector<xfn> args_;
     public:
-        fncall(xfn fn, xfnv args) : fn_(fn), args_(args) {}
+        fncall(xfn fn, vector<xfn> args = vector<xfn>()) : fn_(fn), args_(args) {}
         var operator()() {
-            vector<var> vv;
-            for (xfnv::const_iterator i = args_.begin(); i != args_.end(); i++) {
-                vv.push_back((*i)());
-            }
-            return (fn_().getfunction())(vv);
+            return fn_().getfunction()(reify(args_));
         }
     };
 
-    struct assign {
+    class delay {
+        xfn fn_;
+    public:
+        delay(xfn fn) : fn_(fn) {}
+        // its an xfn.
+        var operator()() {
+            return var(*this);
+        }
+        // and a var
+        var operator()(vector<var> const&) {
+             return fn_();
+        }
+    };
+
+    class assign {
         binder lhs_;
         xfn rhs_;
+    public:
         assign(binder lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
         var operator()() {
             var& v = lhs_();
@@ -65,17 +84,28 @@ namespace memory {
         }
     };
 
-    parser::parser(std::istream& is) : lex_(is), toks_(lex_) {
+    parser::parser() {
         syms["read"] = var(readfn);
         syms["print"] = var(printfn);
         syms["write"] = var(writefn);
         syms["crc16"] = var(crc16fn);
         syms["range"] = var(rangefn);
         syms["offset"] = var(offsetfn);
+        syms["join"] = var(joinfn);
 
         ops['+'] = op(20, add);
         ops['*'] = op(40, mul);
         ops[lexer::dotdot] = op (50, mkrange);
+    }
+
+    void parser::parse(std::istream& is) {
+        lexer lex(is);
+        toks_ = tokstream(lex);
+        parsefile();
+    }
+    void parser::parse(std::string const& s) {
+        std::istringstream is(s);
+        parse(is);
     }
 
     void
@@ -112,9 +142,18 @@ namespace memory {
     xfn
     parser::parseexpr() {
         trace t1("expr", toks_);
+        bool b = false;
+        if (toks_[0].type() == lexer::fn) {
+            toks_.consume();
+            b = true;
+        }
         xfn v = parseprimaryexpr();
-
-        return parsebinoprhs(0, v);
+        xfn e = parsebinoprhs(0, v);
+        if (b) {
+            return delay(e);
+        }
+    
+        return e;
     }
 
     // this mechanism pinched from the llvm tutorial

@@ -9,7 +9,6 @@
 #include "range.h"
 
 namespace mem {
-
     typedef range_base<addr> range;
 
     class memory {

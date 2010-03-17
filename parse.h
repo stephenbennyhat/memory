@@ -3,14 +3,17 @@
 
 #include <stdexcept>
 #include <map>
-#include <tr1/functional>
 #include <assert.h>
 #include <ctype.h>
+#include "port.h"
 #include "mem.h"
 #include "lex.h"
 #include "var.h"
 
 namespace memory {
+
+    typedef port::function<var (var const&, var const&)> opfn;
+
     class parser {
     public:
         struct parse_error : public std::exception {
@@ -23,20 +26,18 @@ namespace memory {
             token t_;
         };
 
-        parser(std::istream& os);
-        void parse() { parsefile(); }
+        parser();
 
-        typedef std::tr1::function<var (var const&, var const&)> opfn;
+        void parse(std::istream& os);
+        void parse(std::string const& s);
     private:
         static bool const interactive = 0;
 
-
-        lexer lex_;
         tokstream toks_;
-
         symtab syms;
 
         typedef std::pair<int, opfn> op; // prec, fn
+
         typedef std::map<int, op> optab;
         optab ops;
 
@@ -45,6 +46,7 @@ namespace memory {
         void match(int t);
 
         void checktype(var::vartype t1, var::vartype t2) const;
+        void parseerror(std::string s);
 
         void parsefile();
         xfn parsestmt();
@@ -56,8 +58,6 @@ namespace memory {
         xfn parsestringexpr();
         xfn parsenumberexpr();
         xfn parsebinoprhs(int, xfn);
-   
-        void parseerror(std::string s);
     };
 }
 #endif

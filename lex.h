@@ -63,10 +63,15 @@ namespace memory {
 
     class tokstream {
     public:
-        tokstream(lexer_base& lb) : lb_(lb) {
+        tokstream(lexer_base& lb) : lb_(&lb) {
             toks_.push_back(token());
         }
-        tokstream operator=(tokstream const&);
+        tokstream() {}
+        tokstream operator=(tokstream const& other) {
+            lb_ = other.lb_;
+            toks_ = other.toks_;
+            return *this;
+        }
         virtual ~tokstream();
         token operator[](int i);
         void consume();
@@ -76,8 +81,8 @@ namespace memory {
         static int const eof = -1;
         static int const null = 0;
     private:
-        void load() { toks_.push_back(lb_.next()); }
-        lexer_base& lb_;
+        void load() { toks_.push_back(lb_->next()); }
+        lexer_base *lb_;
         std::deque<token> toks_;
     };
 
@@ -94,6 +99,7 @@ namespace memory {
             num,
             dotdot,
             name,
+            fn,
         };
         explicit lexer(std::istream& is) : is_(is) {}
         virtual ~lexer() {}
@@ -104,8 +110,8 @@ namespace memory {
         int getchar();
     };
 
-    bool validnumber(std::string s);
-    number readnumber(std::string s);
+    bool validnumber(std::string const& s);
+    number readnumber(std::string const &s);
 
 }
 #endif

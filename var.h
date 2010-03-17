@@ -2,16 +2,16 @@
 #define VAR_H
 
 #include <vector>
+#include "port.h"
 #include <list>
-#include <tr1/functional>
 #include "mem.h"
 #include "lex.h"
 
 namespace memory {
     class var;
 
-    typedef std::tr1::function<var (std::vector<var> const&)> fn;
-    typedef std::tr1::function<var ()> xfn;
+    typedef port::function<var (std::vector<var> const&)> fn;
+    typedef port::function<var ()> xfn;
 
     class var {
     public:

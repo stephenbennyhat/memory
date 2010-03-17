@@ -12,6 +12,7 @@ namespace memory {
     var::var writefn(std::vector<var::var> const& args);
     var::var rangefn(std::vector<var::var> const& args);
     var::var offsetfn(std::vector<var::var> const& args);
+    var::var joinfn(std::vector<var::var> const& args);
 
     // binops
     var::var add(var::var const& v1, var::var const& v2);

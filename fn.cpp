@@ -11,7 +11,6 @@ namespace memory {
     std::string ofs = "";
     std::string ors = "\n";
 
-
     var
     readfn(vector<var> const& args) {
         if (args.size() != 1) {
@@ -83,6 +82,15 @@ namespace memory {
         number n = args[1].getnumber();
 
         return offset(m, n);
+    }
+
+    var
+    joinfn(vector<var> const& args) {
+        if (args.size() != 2) {
+            std::cout << "error: bad arguments" << std::endl;
+            return var();
+        }
+        return join(args[0].getmemory(), args[1].getmemory());
     }
 
     var
