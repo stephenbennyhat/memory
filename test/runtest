@@ -1,0 +1,20 @@
+#!/bin/sh
+
+function run() {
+   echo $1
+   sed -n '/#\^ /s/#\^ //p' $1 > tmp1
+   ../memory $1 > tmp2
+   diff tmp1 tmp2
+}
+
+if [ $# != 0 ]
+then
+        run $1
+else
+        for i in *.scr
+        do
+            run $i
+        done
+fi
+
+rm -f tmp1 tmp2

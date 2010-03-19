@@ -1,13 +1,12 @@
 T=memory
 O=memory.o mem.o readfile.o writefile.o crc.o var.o lex.o parse.o fn.o memutils.o trace.o
-CC=g++ -Wall -g -DUSE_BOOST
-
-test: $T
-	./$T script.mem
-
+CC=g++ -Wall -g -DUSE_TR1
 
 $T: $O
 	$(CC) -o $T $O
+
+runtests:
+	cd test && ./runtest
 
 .cpp.o:
 	$(CC) $(CFLAGS) -c $< 

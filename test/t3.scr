@@ -1,0 +1,9 @@
+x=0;
+if (x) {
+  print("err");
+}
+
+if (y) {
+  print("err");
+}
+

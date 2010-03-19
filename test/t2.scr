@@ -1,0 +1,28 @@
+m=read("bootloader_SWE1.mhx");
+print(m);
+r=0xE0000..0xF0000;
+print("r=", r);
+m[0xE0000..0xF0000];
+print("CRC: ", r, " ", crc16(_));
+print("CRC: ", range(m), " ", crc16(m));
+
+e=read("example.srec");
+print(_);
+
+print("0: ", m[0xE0000]);
+print("1: ", m[0xE0001]);
+
+print(offset(e, 1));
+
+x=m+e;
+print(x);
+
+#^ memory: nblocks=1 r=[0xe0000..0xfffff) crc16=0x55d5 desc="/home/basil/k48/build/bootloader" addr=0
+#^ r=[0xe0000..0xf0000)
+#^ CRC: [0xe0000..0xf0000) 0x7fcd
+#^ CRC: [0xe0000..0xfffff) 0x55d5
+#^ memory: nblocks=1 r=[0..0x34) crc16=0xf643 desc="HDR" addr=0
+#^ 0: 0x6
+#^ 1: 0
+#^ memory: nblocks=1 r=[0x1..0x35) crc16=0xf643 addr=n/a
+#^ memory: nblocks=2 r=[0..0xfffff) crc16=n/a desc="/home/basil/k48/build/bootloader" addr=0
