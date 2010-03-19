@@ -111,6 +111,7 @@ namespace memory {
                 if (validnumber(s)) return token(num, s, pos_, "num");
                 if (s == "fn") return token(fn, s, pos_, "fn");
                 if (s == "if") return token(iftok, s, pos_, "if");
+                if (s == "else") return token(elsetok, s, pos_, "else");
 
                 return token(name, s, pos_, "name");
             }

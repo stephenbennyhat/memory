@@ -1,6 +1,7 @@
 #include <fstream>
 #include <sstream>
 #include <ctype.h>
+#include "trace.h"
 #include "mem.h"
 #include "parse.h"
 
@@ -20,6 +21,10 @@ main(int argc, char **argv) {
 
         while (argv[1] && argv[1][0] == '-') {
             switch (argv[1][1]) {
+            case 'd':
+               tracer::trace::debug = true;
+               argv++; argc--;
+               break;
             case 'e':
                 if (argv[2]) {
                     p.parse(string(argv[2]) + ";");

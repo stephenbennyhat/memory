@@ -1,0 +1,14 @@
+if (1) {
+   good=1;
+   print("good1");
+} else {
+   print("bad1");
+}
+if (0) {
+   print("bad2");
+} else {
+   good=good+1;
+   print("good2");
+}
+
+print("ok = 2==", good);

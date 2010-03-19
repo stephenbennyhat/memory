@@ -6,14 +6,18 @@
 
 namespace tracer {
     struct trace {
-        static bool const debug = false;
+        static bool debug;
+        static std::string prefix;
+
         trace(std::string s, memory::tokstream& ts) : s_(s), ts_(ts) {
             if (debug)
-                std::cout << "enter: " << s_ << " " << ts_ << std::endl;
+                std::cout << prefix << "enter: " << s_ << " " << ts_ << std::endl;
+            prefix.push_back(' ');
         }
         ~trace() {
+            prefix = prefix.substr(0, prefix.length() - 1);
             if (debug)
-                std::cout << "exit: " << s_ << " " << ts_
+                std::cout << prefix << "exit: " << s_ << " " << ts_
                           << (std::uncaught_exception() ? " (exception)" : "")
                           << std::endl;
         }
@@ -21,4 +25,6 @@ namespace tracer {
         memory::tokstream& ts_;
     };
 }
+
+
 #endif

@@ -1,6 +1,6 @@
 T=memory
-O=memory.o mem.o readfile.o writefile.o crc.o var.o lex.o parse.o fn.o memutils.o
-CC=g++ -Wall -g -DUSE_TR1
+O=memory.o mem.o readfile.o writefile.o crc.o var.o lex.o parse.o fn.o memutils.o trace.o
+CC=g++ -Wall -g -DUSE_BOOST
 
 test: $T
 	./$T script.mem

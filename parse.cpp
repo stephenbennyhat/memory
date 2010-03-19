@@ -62,7 +62,7 @@ namespace memory {
     class compstmt {
         vector<xfn> stmts_;
     public:
-        compstmt(vector<xfn> const& stmts): stmts_(stmts_) {}
+        compstmt(vector<xfn> const& stmts): stmts_(stmts) {}
         var operator()() {
             var v;
             for (vector<xfn>::const_iterator i = stmts_.begin(); i != stmts_.end(); i++)
@@ -79,7 +79,6 @@ namespace memory {
         ifexpr(xfn e, xfn s1, xfn s2 = constantly(0)) : e_(e), s1_(s1), s2_(s2) {}
         var operator()() {
             bool b = e_();
-            std::cout << "ifexpr: "<< b << std::endl;
             return b ? s1_() : s2_();
         }
     };
@@ -104,8 +103,9 @@ namespace memory {
     public:
         assign(binder lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
         var operator()() {
-            var& v = lhs_();
-            return v = rhs_();
+            var& l = lhs_();
+            var r = rhs_();
+            return l = r;
         }
     };
 
@@ -136,9 +136,9 @@ namespace memory {
     void
     parser::printops(std::ostream& os) const {
         for (optab::const_iterator o = ops.begin(); o != ops.end(); o++) {
-            std::cout << o->first
-                      << "=[" << o->second.first << "," << o->second.second << "]"
-                      << std::endl;
+            os  << o->first
+                << "=[" << o->second.first << "," << o->second.second << "]"
+                << std::endl;
         }
     }
 
@@ -162,6 +162,7 @@ namespace memory {
         if (toks_[0].type() == lexer::iftok)
              return parseifexpr();
         if (toks_[0].type() == '{') {
+            trace t1("cmptstmt", toks_);
             toks_.consume();
             vector<xfn> ss;
             while (toks_[0].type() != '}') {
@@ -175,8 +176,6 @@ namespace memory {
         return e;
     }
 
-    //   expr
-    // | fn (args*) expr
     xfn
     parser::parseexpr() {
         trace t1("expr", toks_);
@@ -237,15 +236,14 @@ namespace memory {
     parser::parseifexpr() {
         trace t1("ifexpr", toks_);
         toks_.consume();
-        xfn e;
-        if (toks_[0].type() == '(') {
-            toks_.consume();
-            e = parseexpr();
-            match(')');
-        }
+        match('(');
+        xfn e = parseexpr();
+        match(')');
         xfn s = parsestmt();
-
-        return ifexpr(e, s);
+        if (toks_[0].type() != lexer::elsetok)
+           return ifexpr(e, s);
+        toks_.consume();
+        return ifexpr(e, s, parsestmt());
     }
 
     xfn
