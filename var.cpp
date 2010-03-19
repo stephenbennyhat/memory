@@ -41,9 +41,9 @@ namespace memory {
 
     var& symtab::lookup(std::string const &s) {
         for (symstype::iterator i = syms.begin(); i != syms.end(); i++) {
-            if (i->count(s) != 0) {
-                return (*i)[s];
-            }
+            scope::iterator ci = (*i).find(s);
+            if (ci != (*i).end())
+                return ci->second;
         }
         return insert(s, var());
     }
@@ -52,12 +52,16 @@ namespace memory {
         return syms.front()[s] = val;
     }
 
-    //void
-    //symtab::print(std::ostream& os) const {
-        //symtab::const_iterator end = syms.end();
-        //os << "nsyms: " << syms.size() << std::endl;
-        //for (symtab::const_iterator i = syms.begin(); i != end; ++i) {
-            //os << " syms[" << i->first << "] = " << i->second << std::endl;
-        //}
-    //}
+    void
+    symtab::print(std::ostream& os) const {
+        int level = 0;
+        for (symstype::const_iterator bi = syms.begin(); bi != syms.end(); ++bi) {
+            scope const& sc = *bi;
+            string s = ""; for (int i = 0; i < level; i++) s += " ";
+            os << s << "scope: " << ++level << std::endl;
+            for (scope::const_iterator si = sc.begin(); si != sc.end(); ++si) {
+                os << s << " " << si->first << "=" << si->second << std::endl;
+            }
+        }
+    }
 }

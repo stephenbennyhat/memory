@@ -125,10 +125,17 @@ namespace memory {
         var& operator[](std::string const& s) {
             return lookup(s);
         }
+        void print(std::ostream& os) const;
     private:
         typedef std::map<std::string, var::var> scope;
         typedef std::list<scope> symstype;
         symstype syms;
     };
+    inline
+    std::ostream& operator<<(std::ostream& os, symtab const& v) {
+        v.print(os);
+        return os;
+    }
+
 }
 #endif
