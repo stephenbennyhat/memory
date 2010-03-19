@@ -53,9 +53,34 @@ namespace memory {
         xfn fn_;
         vector<xfn> args_;
     public:
-        fncall(xfn fn, vector<xfn> args = vector<xfn>()) : fn_(fn), args_(args) {}
+        fncall(xfn fn, vector<xfn> const& args = vector<xfn>()) : fn_(fn), args_(args) {}
         var operator()() {
             return fn_().getfunction()(reify(args_));
+        }
+    };
+
+    class compstmt {
+        vector<xfn> stmts_;
+    public:
+        compstmt(vector<xfn> const& stmts): stmts_(stmts_) {}
+        var operator()() {
+            var v;
+            for (vector<xfn>::const_iterator i = stmts_.begin(); i != stmts_.end(); i++)
+                v = (*i)();
+            return v;
+        }
+    };
+
+    class ifexpr {
+        xfn e_;
+        xfn s1_;
+        xfn s2_;
+    public:
+        ifexpr(xfn e, xfn s1, xfn s2 = constantly(0)) : e_(e), s1_(s1), s2_(s2) {}
+        var operator()() {
+            bool b = e_();
+            std::cout << "ifexpr: "<< b << std::endl;
+            return b ? s1_() : s2_();
         }
     };
 
@@ -134,9 +159,20 @@ namespace memory {
     xfn
     parser::parsestmt() {
         trace t1("stmt", toks_);
-        xfn v = parseexpr();
+        if (toks_[0].type() == lexer::iftok)
+             return parseifexpr();
+        if (toks_[0].type() == '{') {
+            toks_.consume();
+            vector<xfn> ss;
+            while (toks_[0].type() != '}') {
+               ss.push_back(parsestmt());
+            }
+            toks_.consume();
+            return compstmt(ss);
+        }
+        xfn e = parseexpr();
         match(';');
-        return v;
+        return e;
     }
 
     //   expr
@@ -195,6 +231,21 @@ namespace memory {
             return parseparenexpr();
         parseerror("invalid primary expression");
         return constantly(0);
+    }
+
+    xfn
+    parser::parseifexpr() {
+        trace t1("ifexpr", toks_);
+        toks_.consume();
+        xfn e;
+        if (toks_[0].type() == '(') {
+            toks_.consume();
+            e = parseexpr();
+            match(')');
+        }
+        xfn s = parsestmt();
+
+        return ifexpr(e, s);
     }
 
     xfn

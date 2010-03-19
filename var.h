@@ -45,6 +45,13 @@ namespace memory {
         var(fn f) : t_(tfunction), f_(f) {}
 
         vartype type() const { return t_; }
+        operator bool() const {
+           if (type() == tnull)
+               return false;
+           if (type() == tnumber && getnumber() == 0)
+               return false;
+           return true;
+        }
 
         mem::memory& getmemory() {
             check(tmemory);
