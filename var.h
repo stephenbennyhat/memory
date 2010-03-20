@@ -36,78 +36,52 @@ namespace memory {
             std::string s_;
         };
 
-        var() : t_(tnull) {} // for containers
+        var();
+        var(mem::memory const& m);
+        var(mem::range const& r);
+        var(number const& r);
+        var(std::string const& s);
+        var(fn const& f);
 
-        var(mem::memory m) : t_(tmemory), m_(m) {}
-        var(mem::range r) : t_(trange), r_(r) {}
-        var(number r) : t_(tnumber), n_(r) {}
-        var(std::string s) : t_(tstring), s_(s) {}
-        var(fn f) : t_(tfunction), f_(f) {}
+        vartype type() const { return impl_->type();}
+        operator bool() const;
 
-        vartype type() const { return t_; }
-        operator bool() const {
-           if (type() == tnull)
-               return false;
-           if (type() == tnumber && getnumber() == 0)
-               return false;
-           return true;
-        }
+        mem::memory const& getmemory() const { return impl_->getmemory(); }
+        mem::range const& getrange() const { return impl_->getrange(); }
+        number const& getnumber() const { return impl_->getnumber(); }
+        std::string const& getstring() const { return impl_->getstring(); }
+        fn const& getfunction() const { return impl_->getfunction(); }
 
-        mem::memory& getmemory() {
-            check(tmemory);
-            return m_;
-        }
-        mem::memory const& getmemory() const {
-            check(tmemory);
-            return m_;
-        }
-        mem::range& getrange() {
-            check(trange);
-            return r_;
-        }
-        mem::range const& getrange() const {
-            check(trange);
-            return r_;
-        }
-        number& getnumber() {
-            check(tnumber);
-            return n_;
-        }
-        number const& getnumber() const {
-            check(tnumber);
-            return n_;
-        }
-        std::string& getstring() {
-            check(tstring);
-            return s_;
-        }
-        std::string const& getstring() const {
-            check(tstring);
-            return s_;
-        }
-        fn &getfunction() {
-            check(tfunction);
-            return f_;
-        }
-        fn const& getfunction() const {
-            check(tfunction);
-            return f_;
-        }
-        bool is(vartype t) const { return t == t_; }
-        void check(vartype t) const {
-            if (t != t_) {
-                throw type_error(t, t_, "incompatible");
-            }
-        }
+        bool is(vartype t) const { return type() == t; }
+        void check(vartype t) const;
         static std::string typestr(vartype t);
     private:
-        vartype t_;
-        // in a better world i'd hold these by pointer to derived type.
-        mem::memory m_;
-        mem::range r_;
-        number n_;
-        std::string s_;
-        fn f_;
+        struct impl {
+
+            void check(vartype t) const {
+                if (t != type())
+                    throw var::type_error(t, type(), "type check failed");
+            };
+
+            virtual vartype type() const = 0;
+            virtual mem::memory& getmemory() {
+               throw type_error(tmemory,  type(), "cannot convert");
+            }
+            virtual mem::range& getrange() {
+               throw type_error(trange,   type(), "cannot convert");
+            }
+            virtual number& getnumber() { 
+               throw type_error(tnumber,  type(), "cannot convert");
+            }
+            virtual std::string& getstring()   {
+               throw type_error(tnumber,  type(), "cannot convert");
+            }
+            virtual fn& getfunction() {
+               throw type_error(tfunction, type(), "cannot convert");
+            }
+        };
+        typedef port::shared_ptr<impl> pi;
+        pi impl_;
     public:
         void print(std::ostream& os) const;
     };
