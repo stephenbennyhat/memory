@@ -4,7 +4,7 @@ function run() {
    echo $1
    sed -n '/#\^ /s/#\^ //p' $1 > tmp1
    ../memory $1 > tmp2
-   diff tmp1 tmp2
+   diff --strip-trailing-cr tmp1 tmp2
 }
 
 if [ $# != 0 ]
