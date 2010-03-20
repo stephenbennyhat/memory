@@ -31,15 +31,12 @@ namespace memory {
         void parse(std::istream& os);
         void parse(std::string const& s);
     private:
-        static bool const interactive = 0;
-
-        tokstream toks_;
-        symtab syms;
-
         typedef std::pair<int, opfn> op; // prec, fn
-
         typedef std::map<int, op> optab;
-        optab ops;
+
+        optab ops_;
+        tokstream toks_;
+        symtab syms_;
 
         void printops(std::ostream& os) const;
 
@@ -61,7 +58,6 @@ namespace memory {
         xfn parsenumberexpr();
         xfn parsebinoprhs(int, xfn);
         std::vector<xfn> parsearglist();
-
     };
 }
 #endif

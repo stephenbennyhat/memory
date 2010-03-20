@@ -124,18 +124,18 @@ namespace memory {
     };
 
     parser::parser() {
-        syms["read"] = var(readfn);
-        syms["print"] = var(printfn);
-        syms["write"] = var(writefn);
-        syms["crc16"] = var(crc16fn);
-        syms["range"] = var(rangefn);
-        syms["offset"] = var(offsetfn);
-        syms["join"] = var(joinfn);
+        syms_["read"] = var(readfn);
+        syms_["print"] = var(printfn);
+        syms_["write"] = var(writefn);
+        syms_["crc16"] = var(crc16fn);
+        syms_["range"] = var(rangefn);
+        syms_["offset"] = var(offsetfn);
+        syms_["join"] = var(joinfn);
 
-        ops['+'] = op(20, add);
-        ops['-'] = op(20, sub);
-        ops['*'] = op(40, mul);
-        ops[lexer::dotdot] = op (50, mkrange);
+        ops_['+'] = op(20, add);
+        ops_['-'] = op(20, sub);
+        ops_['*'] = op(40, mul);
+        ops_[lexer::dotdot] = op (50, mkrange);
     }
 
     void parser::parse(std::istream& is) {
@@ -150,7 +150,7 @@ namespace memory {
 
     void
     parser::printops(std::ostream& os) const {
-        for (optab::const_iterator o = ops.begin(); o != ops.end(); o++) {
+        for (optab::const_iterator o = ops_.begin(); o != ops_.end(); o++) {
             os  << o->first
                 << "=[" << o->second.first << "," << o->second.second << "]"
                 << std::endl;
@@ -167,7 +167,7 @@ namespace memory {
     parser::parsefile() {
         while (toks_[0].type() != tokstream::eof) {
             xfn v = parsestmt();
-            syms["_"] = v();
+            syms_["_"] = v();
         }
     }
 
@@ -221,14 +221,14 @@ namespace memory {
         for (;;) {
             trace t1("binoploop", toks_);
             int type = toks_[0].type();
-            if (ops.count(type) == 0 || ops[type].first < exprprec)
+            if (ops_.count(type) == 0 || ops_[type].first < exprprec)
                 return lhs;
             toks_.consume();
             xfn rhs = parseprimaryexpr();
             int ntype = toks_[0].type();
-            if (ops.count(ntype) == 0 || ops[type].first < ops[ntype].first)
-                rhs = parsebinoprhs(ops[type].first+1, rhs);
-            opfn fn(ops[type].second);
+            if (ops_.count(ntype) == 0 || ops_[type].first < ops_[ntype].first)
+                rhs = parsebinoprhs(ops_[type].first+1, rhs);
+            opfn fn(ops_[type].second);
             lhs = binopcall(fn, lhs, rhs);
         }
         return lhs;
@@ -277,7 +277,7 @@ namespace memory {
     xfn
     parser::parsenameexpr() {
         trace t1("nameexpr", toks_);
-        var &v = syms[toks_[0].str()];
+        var &v = syms_[toks_[0].str()];
         toks_.consume();
         if (toks_[0].type() == '(') {
             return fncall(constantly(v), parsearglist());
