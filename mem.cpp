@@ -136,7 +136,9 @@ namespace mem {
         if (!getdesc().empty()) {
             os << " desc=\"" << getdesc() << '"';
         }
-        os << " addr=" << getexecaddr();
+        os << " addr=" ;
+        if (hasexecaddr()) os << getexecaddr(); else os << "n/a";
+
         if (verbose) {
             os << std::endl;
             mmap::const_iterator const end = m_.end();

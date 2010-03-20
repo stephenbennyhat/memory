@@ -18,11 +18,15 @@ namespace mem {
         mmap m_;
         range r_;
         std::string desc_;
+        bool hasexecaddr_;
         addr execaddr_;
 
         byte const *find(addr a) const;
         mmap::const_iterator findblock(addr a) const;
     public:
+        memory() : hasexecaddr_(false), execaddr_(0) {
+        }
+
         byte& insert(addr a, byte b = byte());
         byte  operator[](addr a) const;
         byte& operator[](addr a);
@@ -36,8 +40,9 @@ namespace mem {
         std::string getdesc() const { return desc_; }
         void setdesc(std::string const& s)  { desc_ = s; }
 
+        bool hasexecaddr() const { return hasexecaddr_;}
         addr getexecaddr() const { return execaddr_; }
-        void setexecaddr(addr a) { execaddr_ = a; }
+        void setexecaddr(addr a) { execaddr_ = a; hasexecaddr_ = true;}
 
         class memory_const_iterator
         {
