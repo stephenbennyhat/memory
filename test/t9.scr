@@ -1,0 +1,9 @@
+f = fn () {
+   fn () { 1; };
+}
+
+print(f);
+x=f();
+y=x();
+print(x, " ", y);
+#^ function 0x1

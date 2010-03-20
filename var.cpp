@@ -80,8 +80,6 @@ namespace memory {
     void var::print(std::ostream& os) const {
         switch (type()) {
         default:
-           break;
-        case tfunction:
            os << typestr(type());
            break;
         case tmemory:
@@ -101,7 +99,7 @@ namespace memory {
 
     std::string var::typestr(vartype t) {
         switch (t) {
-        default: 
+        default:      return "unknown"; break;
         case tnull:   return "(null)"; break;
         case tmemory: return "memory"; break;
         case trange:  return "range"; break;
@@ -111,7 +109,7 @@ namespace memory {
         }
     }
 
-    var& symtab::lookup(std::string const &s) {
+    symtab::symbol& symtab::lookup(std::string const &s) {
         for (symstype::iterator i = syms.begin(); i != syms.end(); i++) {
             scope::iterator ci = (*i).find(s);
             if (ci != (*i).end())
@@ -120,8 +118,8 @@ namespace memory {
         return insert(s, var());
     }
 
-    var& symtab::insert(std::string const& s, var const& val) {
-        return syms.front()[s] = val;
+    symtab::symbol& symtab::insert(std::string const& s, var const& val, bool dyn) {
+        return syms.front()[s] = symbol(val, s, dyn);
     }
 
     void
@@ -132,7 +130,9 @@ namespace memory {
             string s = ""; for (int i = 0; i < level; i++) s += " ";
             os << s << "scope: " << ++level << std::endl;
             for (scope::const_iterator si = sc.begin(); si != sc.end(); ++si) {
-                os << s << " " << si->first << "=" << si->second << std::endl;
+                os << s << " " << si->first << "=" << si->second.v_
+                   << " (" << (si->second.dyn_ ? "dyn" : "lex") << ")"
+                   << std::endl;
             }
         }
     }

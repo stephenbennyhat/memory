@@ -57,12 +57,10 @@ namespace memory {
         static std::string typestr(vartype t);
     private:
         struct impl {
-
             void check(vartype t) const {
                 if (t != type())
                     throw var::type_error(t, type(), "type check failed");
             };
-
             virtual vartype type() const = 0;
             virtual mem::memory& getmemory() {
                throw type_error(tmemory,  type(), "cannot convert");
@@ -94,8 +92,16 @@ namespace memory {
 
     class symtab {
     public:
-        var& lookup(std::string const &name);
-        var& insert(std::string const& name, var const& val);
+        struct symbol {
+            var::var    v_;
+            std::string name_;
+            bool        dyn_;
+            symbol(var const& v, std::string name, bool dyn=false) :
+                v_(v), name_(name), dyn_(dyn) {}
+            symbol() : dyn_(false) {}
+        };
+        symbol& lookup(std::string const& name);
+        symbol& insert(std::string const& name, var const& val, bool dyn=false);
         symtab() { push(); }
         void push() {
             syms.push_front(scope());
@@ -103,12 +109,12 @@ namespace memory {
         void pop() {
             syms.pop_front();
         }
-        var& operator[](std::string const& s) {
+        symbol& operator[](std::string const& s) {
             return lookup(s);
         }
         void print(std::ostream& os) const;
     private:
-        typedef std::map<std::string, var::var> scope;
+        typedef std::map<std::string, symbol> scope;
         typedef std::list<scope> symstype;
         symstype syms;
     };

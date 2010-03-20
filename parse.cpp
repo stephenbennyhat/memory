@@ -4,11 +4,12 @@
 #include "fn.h"
 #include "trace.h"
 
-using std::vector;
-using std::pair;
-using tracer::trace;
-
 namespace memory {
+    using std::vector;
+    using std::pair;
+    using std::string;
+    using tracer::trace;
+
     vector<var>
     reify(vector<xfn> const &args) {
        vector<var> vv(args.size());
@@ -18,8 +19,7 @@ namespace memory {
        return vv;
     }
 
-    class constantly
-    {
+    class constantly {
         var t_;
     public:
         constantly(var t) : t_(t) {}
@@ -28,14 +28,26 @@ namespace memory {
         };
     };
 
-    class binder
-    {
-        var& t_;
+    class binder {
+        symtab& t_;
+        symtab::symbol& s_;
+        string name_;
     public:
-        binder(var& t) : t_(t) {}
+        binder(symtab& t, symtab::symbol& s) : t_(t), s_(s), name_(s_.name_) {
+        }
         var& operator()() {
-            return t_;
+            return s_.dyn_ ? t_.lookup(name_).v_ : s_.v_;
         };
+    };
+
+    class dyn {
+        symtab& syms_;
+        string  s_;
+    public:
+        dyn(symtab& syms, string s) : syms_(syms), s_(s) {}
+        var& operator()() {
+            return syms_.lookup(s_).v_;
+        }
     };
 
     class binopcall {
@@ -99,15 +111,22 @@ namespace memory {
 
     class delay {
         xfn fn_;
+        symtab& s_;
+        vector<string> env_;
     public:
-        delay(xfn fn) : fn_(fn) {}
+        delay(xfn fn, symtab& s, vector<string> const& env) : fn_(fn), s_(s), env_(env) {}
         // its an xfn.
         var operator()() {
             return var(*this);
         }
         // and a var.
         var operator()(vector<var> const& args) {
-             return fn_();
+             s_.push();
+             for (size_t i = 0; i < env_.size(); i++)
+                 s_.insert(env_[i], i >= args.size() ? var() : args[i], true);
+             var v = fn_();
+             s_.pop();
+             return v;
         }
     };
 
@@ -124,13 +143,13 @@ namespace memory {
     };
 
     parser::parser() {
-        syms_["read"] = var(readfn);
-        syms_["print"] = var(printfn);
-        syms_["write"] = var(writefn);
-        syms_["crc16"] = var(crc16fn);
-        syms_["range"] = var(rangefn);
-        syms_["offset"] = var(offsetfn);
-        syms_["join"] = var(joinfn);
+        syms_.insert("read", var(readfn));
+        syms_.insert("print", var(printfn));
+        syms_.insert("write", var(writefn));
+        syms_.insert("crc16", var(crc16fn));
+        syms_.insert("range", var(rangefn));
+        syms_.insert("offset", var(offsetfn));
+        syms_.insert("join", var(joinfn));
 
         ops_['+'] = op(20, add);
         ops_['-'] = op(20, sub);
@@ -143,7 +162,8 @@ namespace memory {
         toks_ = tokstream(lex);
         parsefile();
     }
-    void parser::parse(std::string const& s) {
+
+    void parser::parse(string const& s) {
         std::istringstream is(s);
         parse(is);
     }
@@ -166,8 +186,7 @@ namespace memory {
     void
     parser::parsefile() {
         while (toks_[0].type() != tokstream::eof) {
-            xfn v = parsestmt();
-            syms_["_"] = v();
+            syms_.insert("_", parsestmt()());
         }
     }
 
@@ -197,20 +216,39 @@ namespace memory {
     parser::parseexpr() {
         trace t1("expr", toks_);
         vector<xfn> args;
-        bool b = false;
-        if (toks_[0].type() == lexer::fn) {
-            toks_.consume();
-            args = parsearglist();
-            b = true;
-        }
+        if (toks_[0].type() == '{')
+            return parsestmt();
+        if (toks_[0].type() == lexer::fn)
+            return parsefn();
         xfn v = parseprimaryexpr();
-        xfn e = parsebinoprhs(0, v);
-        if (b) {
-            // not sure what to do with the args here.
-            return delay(e);
+        return parsebinoprhs(0, v);
+    }
+
+    xfn
+    parser::parsefn() {
+        trace t1("fn", toks_);
+        toks_.consume();
+        syms_.push();
+        vector<string> params;
+        match('(');
+        for (;;) {
+            if (toks_[0].type() == ')')
+                break;
+            if (toks_[0].type() != lexer::name)
+                parseerror("invalid argument list");
+            string s = toks_[0].str();
+            syms_.insert(s, var(), true);
+            params.push_back(s);
+            toks_.consume();
+            if (toks_[0].type() == ',') {
+                toks_.consume();
+                continue;
+            }
         }
-    
-        return e;
+        toks_.consume();
+        xfn e = parseexpr();
+        syms_.pop();
+        return delay(e, syms_, params);
     }
 
     // this mechanism pinched from the llvm tutorial
@@ -277,19 +315,20 @@ namespace memory {
     xfn
     parser::parsenameexpr() {
         trace t1("nameexpr", toks_);
-        var &v = syms_[toks_[0].str()];
+        symtab::symbol &v = syms_[toks_[0].str()];
         toks_.consume();
         if (toks_[0].type() == '(') {
-            return fncall(constantly(v), parsearglist());
+            return fncall(binder(syms_, v), parsearglist());
         }
         if (toks_[0].type() == '[') {
-            return parseindexexpr(constantly(v));
+            return parseindexexpr(binder(syms_, v));
         }
         if (toks_[0].type() == '=') {
+            trace t2("assign", toks_);
             toks_.consume();
-            return assign(binder(v), parseexpr());
+            return assign(binder(syms_, v), parseexpr());
         }
-        return binder(v);
+        return binder(syms_, v);
     }
 
     vector<xfn>
@@ -345,7 +384,7 @@ namespace memory {
     }
 
     void
-    parser::parseerror(std::string s) {
+    parser::parseerror(string s) {
         throw parse_error("parse error: " + s);
     }
 }
