@@ -83,6 +83,20 @@ namespace memory {
         }
     };
 
+    class whileexpr {
+        xfn e_;
+        xfn s_;
+    public:
+        whileexpr(xfn e, xfn s) : e_(e), s_(s) {}
+        var operator()() {
+            var v;
+            while (e_()) {
+               v = s_();
+            }
+            return v;
+        }
+    };
+
     class delay {
         xfn fn_;
     public:
@@ -91,7 +105,7 @@ namespace memory {
         var operator()() {
             return var(*this);
         }
-        // and a var
+        // and a var.
         var operator()(vector<var> const& args) {
              return fn_();
         }
@@ -119,6 +133,7 @@ namespace memory {
         syms["join"] = var(joinfn);
 
         ops['+'] = op(20, add);
+        ops['-'] = op(20, sub);
         ops['*'] = op(40, mul);
         ops[lexer::dotdot] = op (50, mkrange);
     }
@@ -161,6 +176,8 @@ namespace memory {
         trace t1("stmt", toks_);
         if (toks_[0].type() == lexer::iftok)
              return parseifexpr();
+        if (toks_[0].type() == lexer::whiletok)
+             return parsewhileexpr();
         if (toks_[0].type() == '{') {
             trace t1("cmptstmt", toks_);
             toks_.consume();
@@ -247,6 +264,17 @@ namespace memory {
     }
 
     xfn
+    parser::parsewhileexpr() {
+        trace t1("whileexpr", toks_);
+        toks_.consume();
+        match('(');
+        xfn e = parseexpr();
+        match(')');
+        xfn s = parsestmt();
+        return whileexpr(e, s);
+    }
+
+    xfn
     parser::parsenameexpr() {
         trace t1("nameexpr", toks_);
         var &v = syms[toks_[0].str()];
@@ -261,7 +289,7 @@ namespace memory {
             toks_.consume();
             return assign(binder(v), parseexpr());
         }
-        return constantly(v);
+        return binder(v);
     }
 
     vector<xfn>

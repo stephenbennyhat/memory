@@ -56,6 +56,7 @@ namespace memory {
         xfn parseindexexpr(xfn);
         xfn parsenameexpr();
         xfn parseifexpr();
+        xfn parsewhileexpr();
         xfn parsestringexpr();
         xfn parsenumberexpr();
         xfn parsebinoprhs(int, xfn);

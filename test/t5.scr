@@ -1,0 +1,8 @@
+x=5;
+if (x) {
+    print(x);
+#^ 0x5
+}
+x = x - 1;
+print(x);
+#^ 0x4

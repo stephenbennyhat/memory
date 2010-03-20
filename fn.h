@@ -16,6 +16,7 @@ namespace memory {
 
     // binops
     var::var add(var::var const& v1, var::var const& v2);
+    var::var sub(var::var const& v1, var::var const& v2);
     var::var mul(var::var const& v1, var::var const& v2);
     var::var index(var::var const& v1, var::var const& v2);
     var::var mkrange(var::var const& v1, var::var const& v2);

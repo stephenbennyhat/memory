@@ -102,6 +102,7 @@ namespace memory {
             fn,
             iftok,
             elsetok,
+            whiletok,
         };
         explicit lexer(std::istream& is) : is_(is) {}
         virtual ~lexer() {}

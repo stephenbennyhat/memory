@@ -112,6 +112,7 @@ namespace memory {
                 if (s == "fn") return token(fn, s, pos_, "fn");
                 if (s == "if") return token(iftok, s, pos_, "if");
                 if (s == "else") return token(elsetok, s, pos_, "else");
+                if (s == "while") return token(whiletok, s, pos_, "if");
 
                 return token(name, s, pos_, "name");
             }

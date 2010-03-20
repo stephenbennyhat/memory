@@ -103,6 +103,13 @@ namespace memory {
     }
 
     var
+    sub(var const& v1, var const& v2) {
+        if (v1.is(var::tnumber) && v2.is(var::tnumber))
+            return v1.getnumber() - v2.getnumber();
+        throw var::type_error(v1.type(), v2.type(), "cannot sub");
+    }
+
+    var
     mul(var const& v1, var const& v2) {
         return v1.getnumber() * v2.getnumber(); //XXX
     }
