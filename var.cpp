@@ -115,10 +115,10 @@ namespace memory {
             if (ci != (*i).end())
                 return ci->second;
         }
-        return insert(s, var());
+        return insert(s, pv(new var()));
     }
 
-    symtab::symbol& symtab::insert(std::string const& s, var const& val, bool dyn) {
+    symtab::symbol& symtab::insert(std::string const& s, pv val, bool dyn) {
         return syms.front()[s] = symbol(val, s, dyn);
     }
 

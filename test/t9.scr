@@ -1,9 +1,15 @@
 f = fn () {
-   fn () { 1; };
-}
+   a = 0x0;
+   fn () {
+      a = a + 1; # close over a.
+   };
+};
 
-print(f);
+a = 0xff;
 x=f();
 y=x();
-print(x, " ", y);
-#^ function 0x1
+print(x, " ", y, " ", a);
+#^ function 0x1 0xff
+y=x();
+print(x, " ", y, " ", a);
+#^ function 0x2 0xff

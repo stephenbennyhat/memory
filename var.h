@@ -90,18 +90,20 @@ namespace memory {
         return os;
     }
 
+    typedef struct port::shared_ptr<var::var> pv;
+
     class symtab {
     public:
         struct symbol {
-            var::var    v_;
+            pv v_;
             std::string name_;
-            bool        dyn_;
-            symbol(var const& v, std::string name, bool dyn=false) :
+            bool dyn_;
+            symbol(pv v, std::string name, bool dyn=false) :
                 v_(v), name_(name), dyn_(dyn) {}
             symbol() : dyn_(false) {}
         };
         symbol& lookup(std::string const& name);
-        symbol& insert(std::string const& name, var const& val, bool dyn=false);
+        symbol& insert(std::string const& name, pv v, bool dyn=false);
         symtab() { push(); }
         void push() {
             syms.push_front(scope());

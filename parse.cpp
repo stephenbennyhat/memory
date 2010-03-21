@@ -30,13 +30,15 @@ namespace memory {
 
     class binder {
         symtab& t_;
-        symtab::symbol& s_;
         string name_;
+        bool dyn_;
+        pv v_;
     public:
-        binder(symtab& t, symtab::symbol& s) : t_(t), s_(s), name_(s_.name_) {
+        binder(symtab& t, symtab::symbol& s) :
+            t_(t), name_(s.name_), dyn_(s.dyn_), v_(s.v_) {
         }
         var& operator()() {
-            return s_.dyn_ ? t_.lookup(name_).v_ : s_.v_;
+            return *(dyn_ ? t_.lookup(name_).v_ : v_);
         };
     };
 
@@ -46,7 +48,7 @@ namespace memory {
     public:
         dyn(symtab& syms, string s) : syms_(syms), s_(s) {}
         var& operator()() {
-            return syms_.lookup(s_).v_;
+            return *syms_.lookup(s_).v_;
         }
     };
 
@@ -123,7 +125,8 @@ namespace memory {
         var operator()(vector<var> const& args) {
              s_.push();
              for (size_t i = 0; i < env_.size(); i++)
-                 s_.insert(env_[i], i >= args.size() ? var() : args[i], true);
+                 s_.insert(env_[i], i >= args.size() ? pv(new var)
+                                                     : pv(new var(args[i])), true);
              var v = fn_();
              s_.pop();
              return v;
@@ -143,13 +146,13 @@ namespace memory {
     };
 
     parser::parser() {
-        syms_.insert("read", var(readfn));
-        syms_.insert("print", var(printfn));
-        syms_.insert("write", var(writefn));
-        syms_.insert("crc16", var(crc16fn));
-        syms_.insert("range", var(rangefn));
-        syms_.insert("offset", var(offsetfn));
-        syms_.insert("join", var(joinfn));
+        syms_.insert("read", pv(new var(readfn)));
+        syms_.insert("print", pv(new var(printfn)));
+        syms_.insert("write", pv(new var(writefn)));
+        syms_.insert("crc16", pv(new var(crc16fn)));
+        syms_.insert("range", pv(new var(rangefn)));
+        syms_.insert("offset", pv(new var(offsetfn)));
+        syms_.insert("join", pv(new var(joinfn)));
 
         ops_['+'] = op(20, add);
         ops_['-'] = op(20, sub);
@@ -186,7 +189,8 @@ namespace memory {
     void
     parser::parsefile() {
         while (toks_[0].type() != tokstream::eof) {
-            syms_.insert("_", parsestmt()());
+            pv v(new var(parsestmt()()));
+            syms_.insert("_", v);
         }
     }
 
@@ -237,7 +241,7 @@ namespace memory {
             if (toks_[0].type() != lexer::name)
                 parseerror("invalid argument list");
             string s = toks_[0].str();
-            syms_.insert(s, var(), true);
+            syms_.insert(s, pv(new var), true);
             params.push_back(s);
             toks_.consume();
             if (toks_[0].type() == ',') {
