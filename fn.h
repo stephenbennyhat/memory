@@ -15,6 +15,10 @@ namespace memory {
     var::var joinfn(std::vector<var::var> const& args);
 
     // binops
+    var::var eqop(var::var const& v1, var::var const& v2);
+    var::var neop(var::var const& v1, var::var const& v2);
+    var::var gtop(var::var const& v1, var::var const& v2);
+    var::var ltop(var::var const& v1, var::var const& v2);
     var::var add(var::var const& v1, var::var const& v2);
     var::var sub(var::var const& v1, var::var const& v2);
     var::var mul(var::var const& v1, var::var const& v2);

@@ -61,22 +61,16 @@ namespace memory {
                 if (t != type())
                     throw var::type_error(t, type(), "type check failed");
             };
+            template <class T>
+               T noconvert(vartype t) const {
+               throw type_error(t,  type(), "cannot convert");
+            }
             virtual vartype type() const = 0;
-            virtual mem::memory& getmemory() {
-               throw type_error(tmemory,  type(), "cannot convert");
-            }
-            virtual mem::range& getrange() {
-               throw type_error(trange,   type(), "cannot convert");
-            }
-            virtual number& getnumber() { 
-               throw type_error(tnumber,  type(), "cannot convert");
-            }
-            virtual std::string& getstring()   {
-               throw type_error(tnumber,  type(), "cannot convert");
-            }
-            virtual fn& getfunction() {
-               throw type_error(tfunction, type(), "cannot convert");
-            }
+            virtual mem::memory& getmemory() { return noconvert<mem::memory&>(tmemory); }
+            virtual mem::range& getrange() { return noconvert<mem::range&>(trange); }
+            virtual number& getnumber() { return noconvert<number&>(tnumber); }
+            virtual std::string& getstring() { return noconvert<std::string&>(tstring); }
+            virtual fn& getfunction() { return noconvert<fn&>(tfunction); }
         };
         typedef port::shared_ptr<impl> pi;
         pi impl_;

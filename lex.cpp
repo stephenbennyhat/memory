@@ -83,18 +83,25 @@ namespace memory {
             }
             switch (ch) {
             case ';':
-            case '=':
             case ',':
-            case '+':
-            case '-':
-            case '*':
-            case '/':
+            case '+': case '-':
+            case '*': case '/':
+            case '<': case '>':
             case '[': case ']':
             case '(': case ')':
             case '{': case '}':
                 return token(ch, "", pos_, ch);
-            }
-            if (ch == '.') {
+            case '!':
+                if ((ch = getchar()) == '=')
+                    return token(netok, "", pos_, "!=");
+                is_.putback(ch);
+                return token('!', "", pos_, ch);
+            case '=':
+                ch = getchar();
+                if (ch == '=') return token(eqtok, "", pos_, "==");
+                is_.putback(ch);
+                return token('=', "", pos_, ch);
+            case '.':
                 ch = getchar();
                 if (ch == '.') return token(dotdot, "", pos_, "..");
                 is_.putback(ch);

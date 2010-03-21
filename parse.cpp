@@ -154,6 +154,10 @@ namespace memory {
         syms_.insert("offset", pv(new var(offsetfn)));
         syms_.insert("join", pv(new var(joinfn)));
 
+        ops_[lexer::eqtok] = op(5, eqop);
+        ops_[lexer::netok] = op(5, neop);
+        ops_['<'] = op(10, ltop);
+        ops_['>'] = op(10, gtop);
         ops_['+'] = op(20, add);
         ops_['-'] = op(20, sub);
         ops_['*'] = op(40, mul);

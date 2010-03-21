@@ -115,6 +115,33 @@ namespace memory {
     }
 
     var
+    eqop(var::var const& v1, var::var const& v2) {
+        if (v1.type() != v2.type()) return false;
+        if (v1.is(var::tnumber))
+           return v1.getnumber() == v2.getnumber();
+        throw var::type_error(v1.type(), v2.type(), "cannot cmp");
+    }
+
+    var
+    neop(var::var const& v1, var::var const& v2) {
+        return !eqop(v1, v2);
+    }
+
+    var
+    gtop(var::var const& v1, var::var const& v2) {
+        if (v1.is(var::tnumber) && v2.is(var::tnumber))
+           return v1.getnumber() > v2.getnumber();
+        throw var::type_error(v1.type(), v2.type(), "cannot cmp");
+    }
+
+    var
+    ltop(var::var const& v1, var::var const& v2) {
+        if (v1.is(var::tnumber) && v2.is(var::tnumber))
+           return v1.getnumber() < v2.getnumber();
+        throw var::type_error(v1.type(), v2.type(), "cannot cmp");
+    }
+
+    var
     index(var const& v1, var const& v2) {
         if (v1.is(var::tmemory)) {
             if (v2.is(var::trange))
