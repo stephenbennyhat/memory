@@ -10,9 +10,9 @@ namespace memory {
     using std::string;
     using tracer::trace;
 
-    vector<var>
+    vector<pv>
     reify(vector<xfn> const &args) {
-       vector<var> vv(args.size());
+       vector<pv> vv(args.size());
        std::transform(args.begin(), args.end(),
                       vv.begin(),
                       port::mem_fn(&xfn::operator())); 
@@ -20,11 +20,11 @@ namespace memory {
     }
 
     class constantly {
-        var t_;
+        pv v_;
     public:
-        constantly(var t) : t_(t) {}
-        var const& operator()() {
-            return t_;
+        constantly(var const& t) : v_(new var(t)) {}
+        pv const& operator()() {
+            return v_;
         };
     };
 
@@ -32,7 +32,7 @@ namespace memory {
         pv v_;
     public:
         binder(pv v) : v_(v) {}
-        var& operator()() { return *v_; }
+        pv operator()() { return v_; }
     };
 
     class binopcall {
@@ -41,8 +41,8 @@ namespace memory {
         xfn a2_;
     public:
         binopcall(opfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
-        var::var operator()() { 
-            return op_(a1_(), a2_());
+        pv operator()() { 
+            return pv(new var(op_(a1_(), a2_())));
         }
     };
 
@@ -51,8 +51,8 @@ namespace memory {
         vector<xfn> args_;
     public:
         fncall(xfn fn, vector<xfn> const& args = vector<xfn>()) : fn_(fn), args_(args) {}
-        var operator()() {
-            return fn_().getfunction()(reify(args_));
+        pv operator()() {
+            return pv(new var(fn_()->getfunction()(reify(args_))));
         }
     };
 
@@ -60,8 +60,8 @@ namespace memory {
         vector<xfn> stmts_;
     public:
         compstmt(vector<xfn> const& stmts): stmts_(stmts) {}
-        var operator()() {
-            var v;
+        pv operator()() {
+            pv v;
             for (vector<xfn>::const_iterator i = stmts_.begin(); i != stmts_.end(); i++)
                 v = (*i)();
             return v;
@@ -74,8 +74,8 @@ namespace memory {
         xfn s2_;
     public:
         ifexpr(xfn e, xfn s1, xfn s2 = constantly(0)) : e_(e), s1_(s1), s2_(s2) {}
-        var operator()() {
-            bool b = e_();
+        pv operator()() {
+            bool b = *e_();
             return b ? s1_() : s2_();
         }
     };
@@ -85,46 +85,36 @@ namespace memory {
         xfn s_;
     public:
         whileexpr(xfn e, xfn s) : e_(e), s_(s) {}
-        var operator()() {
-            var v;
-            while (e_()) {
+        pv operator()() {
+            pv v;
+            while (*e_()) {
                v = s_();
             }
             return v;
         }
     };
 
-    class delay {
+    class closure {
         xfn fn_;
-        symtab& s_;
-        vector<string> env_;
     public:
-        delay(xfn fn, symtab& s, vector<string> const& env) : fn_(fn), s_(s), env_(env) {}
-        // its an xfn.
-        var operator()() {
-            return var(*this);
+        closure(xfn fn) : fn_(fn) {}
+        pv operator()() {
+            return pv(new var(*this));
         }
-        // and a var.
-        var operator()(vector<var> const& args) {
-             s_.push();
-             for (size_t i = 0; i < env_.size(); i++)
-                 s_.insert(env_[i], i >= args.size() ? pv(new var)
-                                                     : pv(new var(args[i])));
-             var v = fn_();
-             s_.pop();
-             return v;
+        var operator()(vector<pv> const& args) {
+             return *fn_();
         }
     };
 
     class assign {
-        binder lhs_;
+        xfn lhs_;
         xfn rhs_;
     public:
-        assign(binder lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
-        var operator()() {
-            var& l = lhs_();
-            var r = rhs_();
-            return l = r;
+        assign(xfn lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
+        pv operator()() {
+            pv l = lhs_();
+            *l = *rhs_();
+            return l;
         }
     };
 
@@ -176,7 +166,7 @@ namespace memory {
     void
     parser::parsefile() {
         while (toks_[0].type() != tokstream::eof) {
-            pv v(new var(parsestmt()()));
+            pv v(parsestmt()());
             syms_.insert("_", v);
         }
     }
@@ -239,7 +229,7 @@ namespace memory {
         toks_.consume();
         xfn e = parseexpr();
         syms_.pop();
-        return delay(e, syms_, params);
+        return closure(e);
     }
 
     // this mechanism pinched from the llvm tutorial

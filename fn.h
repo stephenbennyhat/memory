@@ -6,24 +6,24 @@
 
 namespace memory {
     // functions
-    var::var readfn(std::vector<var::var> const& args);
-    var::var printfn(std::vector<var::var> const& args);
-    var::var crc16fn(std::vector<var::var> const& args);
-    var::var writefn(std::vector<var::var> const& args);
-    var::var rangefn(std::vector<var::var> const& args);
-    var::var offsetfn(std::vector<var::var> const& args);
-    var::var joinfn(std::vector<var::var> const& args);
+    var readfn(std::vector<pv> const& args);
+    var printfn(std::vector<pv> const& args);
+    var crc16fn(std::vector<pv> const& args);
+    var writefn(std::vector<pv> const& args);
+    var rangefn(std::vector<pv> const& args);
+    var offsetfn(std::vector<pv> const& args);
+    var joinfn(std::vector<pv> const& args);
 
     // binops
-    var::var eqop(var::var const& v1, var::var const& v2);
-    var::var neop(var::var const& v1, var::var const& v2);
-    var::var gtop(var::var const& v1, var::var const& v2);
-    var::var ltop(var::var const& v1, var::var const& v2);
-    var::var add(var::var const& v1, var::var const& v2);
-    var::var sub(var::var const& v1, var::var const& v2);
-    var::var mul(var::var const& v1, var::var const& v2);
-    var::var index(var::var const& v1, var::var const& v2);
-    var::var mkrange(var::var const& v1, var::var const& v2);
+    var eqop(pv const& v1, pv const& v2);
+    var neop(pv const& v1, pv const& v2);
+    var gtop(pv const& v1, pv const& v2);
+    var ltop(pv const& v1, pv const& v2);
+    var add(pv const& v1, pv const& v2);
+    var sub(pv const& v1, pv const& v2);
+    var mul(pv const& v1, pv const& v2);
+    var index(pv const& v1, pv const& v2);
+    var mkrange(pv const& v1, pv const& v2);
 }
 #endif
 

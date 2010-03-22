@@ -9,10 +9,9 @@
 
 namespace memory {
     class var;
-
-    typedef port::function<var (std::vector<var> const&)> fn;
-    typedef port::function<var ()> xfn;
-
+    typedef struct port::shared_ptr<var> pv;
+    typedef port::function<var (std::vector<pv> const&)> fn;
+    typedef port::function<pv ()> xfn;
     class var {
     public:
         enum vartype {
@@ -84,8 +83,6 @@ namespace memory {
         return os;
     }
 
-    typedef struct port::shared_ptr<var::var> pv;
-
     struct symbol {
         pv v_;
         std::string name_;
@@ -112,5 +109,6 @@ namespace memory {
         v.print(os);
         return os;
     }
+
 }
 #endif

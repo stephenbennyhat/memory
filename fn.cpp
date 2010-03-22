@@ -12,28 +12,28 @@ namespace memory {
     std::string ors = "\n";
 
     var
-    readfn(vector<var> const& args) {
+    readfn(vector<pv> const& args) {
         if (args.size() != 1) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
         }
-        var const& v = args[0];
-        v.check(var::tstring);
-        std::string filename = v.getstring();
+        pv v = args[0];
+        v->check(var::tstring);
+        std::string filename = v->getstring();
         mem::memory m;
         readmoto(filename, m); 
         return m;
     }
 
     var
-    writefn(vector<var> const& args) {
+    writefn(vector<pv> const& args) {
         size_t n = args.size();
         if (n == 1) {
-            mem::writemoto(std::cout, args[0].getmemory()); 
+            mem::writemoto(std::cout, args[0]->getmemory()); 
         }
         else if (n == 2) {
-            std::ofstream os(args[1].getstring().c_str());
-            mem::writemoto(os, args[0].getmemory()); 
+            std::ofstream os(args[1]->getstring().c_str());
+            mem::writemoto(os, args[0]->getmemory()); 
         }
         else {
             std::cout << "error: bad arguments" << std::endl;
@@ -42,9 +42,9 @@ namespace memory {
     }
 
     var
-    printfn(vector<var> const& args) {
+    printfn(vector<pv> const& args) {
         for (size_t i = 0; i < args.size(); ++i) {
-            std::cout << args[i];
+            std::cout << *args[i];
             if (i + 1 != args.size())
                 std::cout << ofs;
         }
@@ -53,107 +53,106 @@ namespace memory {
     }
 
     var
-    crc16fn(vector<var> const& args) {
+    crc16fn(vector<pv> const& args) {
         if (args.size() != 1) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
         }
-        var const& v = args[0];
-        number n = mem::crc16(v.getmemory());
-        return n;
+        pv v = args[0];
+        return mem::crc16(v->getmemory());
     }
 
     var
-    rangefn(vector<var> const& args) {
+    rangefn(vector<pv> const& args) {
         if (args.size() != 1) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
         }
-        return args[0].getmemory().getrange();
+        return args[0]->getmemory().getrange();
     }
 
     var
-    offsetfn(vector<var> const& args) {
+    offsetfn(vector<pv> const& args) {
         if (args.size() != 2) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
         }
-        mem::memory const& m = args[0].getmemory();
-        number n = args[1].getnumber();
+        mem::memory const& m = args[0]->getmemory();
+        number n = args[1]->getnumber();
 
         return offset(m, n);
     }
 
     var
-    joinfn(vector<var> const& args) {
+    joinfn(vector<pv> const& args) {
         if (args.size() != 2) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
         }
-        return join(args[0].getmemory(), args[1].getmemory());
+        return join(args[0]->getmemory(), args[1]->getmemory());
     }
 
     var
-    add(var const& v1, var const& v2) {
-        if (v1.is(var::tnumber) && v2.is(var::tnumber))
-            return v1.getnumber() + v2.getnumber();
-        if (v1.is(var::tmemory) && v2.is(var::tmemory))
-            return join(v1.getmemory(), v2.getmemory());
-        throw var::type_error(v1.type(), v2.type(), "cannot add");
+    add(pv const& v1, pv const& v2) {
+        if (v1->is(var::tnumber) && v2->is(var::tnumber))
+            return v1->getnumber() + v2->getnumber();
+        if (v1->is(var::tmemory) && v2->is(var::tmemory))
+            return join(v1->getmemory(), v2->getmemory());
+        throw var::type_error(v1->type(), v2->type(), "cannot add");
     }
 
     var
-    sub(var const& v1, var const& v2) {
-        if (v1.is(var::tnumber) && v2.is(var::tnumber))
-            return v1.getnumber() - v2.getnumber();
-        throw var::type_error(v1.type(), v2.type(), "cannot sub");
+    sub(pv const& v1, pv const& v2) {
+        if (v1->is(var::tnumber) && v2->is(var::tnumber))
+            return v1->getnumber() - v2->getnumber();
+        throw var::type_error(v1->type(), v2->type(), "cannot sub");
     }
 
     var
-    mul(var const& v1, var const& v2) {
-        return v1.getnumber() * v2.getnumber(); //XXX
+    mul(pv const& v1, pv const& v2) {
+        return v1->getnumber() * v2->getnumber(); //XXX
     }
 
     var
-    eqop(var::var const& v1, var::var const& v2) {
-        if (v1.type() != v2.type()) return false;
-        if (v1.is(var::tnumber))
-           return v1.getnumber() == v2.getnumber();
-        throw var::type_error(v1.type(), v2.type(), "cannot cmp");
+    eqop(pv const& v1, pv const& v2) {
+        if (v1->type() != v2->type()) return false;
+        if (v1->is(var::tnumber))
+           return v1->getnumber() == v2->getnumber();
+        throw var::type_error(v1->type(), v2->type(), "cannot cmp");
     }
 
     var
-    neop(var::var const& v1, var::var const& v2) {
+    neop(pv const& v1, pv const& v2) {
         return !eqop(v1, v2);
     }
 
     var
-    gtop(var::var const& v1, var::var const& v2) {
-        if (v1.is(var::tnumber) && v2.is(var::tnumber))
-           return v1.getnumber() > v2.getnumber();
-        throw var::type_error(v1.type(), v2.type(), "cannot cmp");
+    gtop(pv const& v1, pv const& v2) {
+        if (v1->is(var::tnumber) && v2->is(var::tnumber))
+           return v1->getnumber() > v2->getnumber();
+        throw var::type_error(v1->type(), v2->type(), "cannot cmp");
     }
 
     var
-    ltop(var::var const& v1, var::var const& v2) {
-        if (v1.is(var::tnumber) && v2.is(var::tnumber))
-           return v1.getnumber() < v2.getnumber();
-        throw var::type_error(v1.type(), v2.type(), "cannot cmp");
+    ltop(pv const& v1, pv const& v2) {
+        if (v1->is(var::tnumber) && v2->is(var::tnumber))
+           return v1->getnumber() < v2->getnumber();
+        throw var::type_error(v1->type(), v2->type(), "cannot cmp");
     }
 
     var
-    index(var const& v1, var const& v2) {
-        if (v1.is(var::tmemory)) {
-            if (v2.is(var::trange))
-                return crop(v1.getmemory(), v2.getrange());
-            if (v2.is(var::tnumber))
-                return v1.getmemory()[v2.getnumber()];
+    index(pv const& v1, pv const& v2) {
+        if (v1->is(var::tmemory)) {
+            if (v2->is(var::trange))
+                return crop(v1->getmemory(), v2->getrange());
+            if (v2->is(var::tnumber))
+                return v1->getmemory()[v2->getnumber()];
         }
-        throw var::type_error(v1.type(), v2.type(), "cannot index");
+        throw var::type_error(v1->type(), v2->type(), "cannot index");
     }
 
     var
-    mkrange(var const& v1, var const& v2) {
-        return mem::range(v1.getnumber(), v2.getnumber());
+    mkrange(pv const& v1, pv const& v2) {
+        return mem::range(v1->getnumber(), v2->getnumber());
     }
 }

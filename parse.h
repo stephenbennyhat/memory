@@ -12,7 +12,7 @@
 
 namespace memory {
 
-    typedef port::function<var (var const&, var const&)> opfn;
+    typedef port::function<var (pv const&, pv const&)> opfn;
 
     class parser {
     public:
