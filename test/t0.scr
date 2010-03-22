@@ -18,3 +18,8 @@ print(x == x);
 print(y == y);
 #^ 0x1
 
+
+f = fn (a, b) { a + b; };
+print(f(0, 1));
+print(f(1, 1));
+print(f(1, 2));

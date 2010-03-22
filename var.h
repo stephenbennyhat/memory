@@ -9,9 +9,10 @@
 
 namespace memory {
     class var;
+    class env;
     typedef struct port::shared_ptr<var> pv;
     typedef port::function<var (std::vector<pv> const&)> fn;
-    typedef port::function<pv ()> xfn;
+    typedef port::function<pv (env)> xfn;
     class var {
     public:
         enum vartype {

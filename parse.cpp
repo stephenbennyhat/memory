@@ -10,12 +10,15 @@ namespace memory {
     using std::string;
     using tracer::trace;
 
+    struct env {
+    };
+
     vector<pv>
-    reify(vector<xfn> const &args) {
+    reify(vector<xfn> const &args, env e) {
        vector<pv> vv(args.size());
-       std::transform(args.begin(), args.end(),
-                      vv.begin(),
-                      port::mem_fn(&xfn::operator())); 
+       for (size_t i = 0; i < args.size(); i++) {
+          vv[i] = args[i](e);
+       }
        return vv;
     }
 
@@ -23,7 +26,7 @@ namespace memory {
         pv v_;
     public:
         constantly(var const& t) : v_(new var(t)) {}
-        pv const& operator()() {
+        pv const& operator()(env e) {
             return v_;
         };
     };
@@ -32,7 +35,7 @@ namespace memory {
         pv v_;
     public:
         binder(pv v) : v_(v) {}
-        pv operator()() { return v_; }
+        pv operator()(env e) { return v_; }
     };
 
     class binopcall {
@@ -41,8 +44,8 @@ namespace memory {
         xfn a2_;
     public:
         binopcall(opfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
-        pv operator()() { 
-            return pv(new var(op_(a1_(), a2_())));
+        pv operator()(env e) { 
+            return pv(new var(op_(a1_(e), a2_(e))));
         }
     };
 
@@ -51,8 +54,8 @@ namespace memory {
         vector<xfn> args_;
     public:
         fncall(xfn fn, vector<xfn> const& args = vector<xfn>()) : fn_(fn), args_(args) {}
-        pv operator()() {
-            return pv(new var(fn_()->getfunction()(reify(args_))));
+        pv operator()(env e) {
+            return pv(new var(fn_(e)->getfunction()(reify(args_, e))));
         }
     };
 
@@ -60,10 +63,10 @@ namespace memory {
         vector<xfn> stmts_;
     public:
         compstmt(vector<xfn> const& stmts): stmts_(stmts) {}
-        pv operator()() {
+        pv operator()(env e) {
             pv v;
             for (vector<xfn>::const_iterator i = stmts_.begin(); i != stmts_.end(); i++)
-                v = (*i)();
+                v = (*i)(e);
             return v;
         }
     };
@@ -74,9 +77,9 @@ namespace memory {
         xfn s2_;
     public:
         ifexpr(xfn e, xfn s1, xfn s2 = constantly(0)) : e_(e), s1_(s1), s2_(s2) {}
-        pv operator()() {
-            bool b = *e_();
-            return b ? s1_() : s2_();
+        pv operator()(env e) {
+            bool b = *e_(e);
+            return b ? s1_(e) : s2_(e);
         }
     };
 
@@ -85,10 +88,10 @@ namespace memory {
         xfn s_;
     public:
         whileexpr(xfn e, xfn s) : e_(e), s_(s) {}
-        pv operator()() {
+        pv operator()(env e) {
             pv v;
-            while (*e_()) {
-               v = s_();
+            while (*e_(e)) {
+               v = s_(e);
             }
             return v;
         }
@@ -96,13 +99,15 @@ namespace memory {
 
     class closure {
         xfn fn_;
+        env e_;
     public:
         closure(xfn fn) : fn_(fn) {}
-        pv operator()() {
+        pv operator()(env e) {
+            e_ = e;
             return pv(new var(*this));
         }
         var operator()(vector<pv> const& args) {
-             return *fn_();
+             return *fn_(e_);
         }
     };
 
@@ -111,9 +116,9 @@ namespace memory {
         xfn rhs_;
     public:
         assign(xfn lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
-        pv operator()() {
-            pv l = lhs_();
-            *l = *rhs_();
+        pv operator()(env e) {
+            pv l = lhs_(e);
+            *l = *rhs_(e);
             return l;
         }
     };
@@ -166,7 +171,8 @@ namespace memory {
     void
     parser::parsefile() {
         while (toks_[0].type() != tokstream::eof) {
-            pv v(parsestmt()());
+            env e;
+            pv v(parsestmt()(e));
             syms_.insert("_", v);
         }
     }
