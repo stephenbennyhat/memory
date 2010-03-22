@@ -11,6 +11,7 @@ namespace memory {
     using tracer::trace;
 
     struct env {
+        vector<pv> v_;
     };
 
     vector<pv>
@@ -31,10 +32,10 @@ namespace memory {
         };
     };
 
-    class binder {
+    class global {
         pv v_;
     public:
-        binder(pv v) : v_(v) {}
+        global(pv v) : v_(v) {}
         pv operator()(env e) { return v_; }
     };
 
@@ -305,17 +306,17 @@ namespace memory {
         symbol &v = syms_[toks_[0].str()];
         toks_.consume();
         if (toks_[0].type() == '(') {
-            return fncall(binder(v.v_), parsearglist());
+            return fncall(global(v.v_), parsearglist());
         }
         if (toks_[0].type() == '[') {
-            return parseindexexpr(binder(v.v_));
+            return parseindexexpr(global(v.v_));
         }
         if (toks_[0].type() == '=') {
             trace t2("assign", toks_);
             toks_.consume();
-            return assign(binder(v.v_), parseexpr());
+            return assign(global(v.v_), parseexpr());
         }
-        return binder(v.v_);
+        return global(v.v_);
     }
 
     vector<xfn>
