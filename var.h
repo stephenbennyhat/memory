@@ -86,28 +86,21 @@ namespace memory {
 
     typedef struct port::shared_ptr<var::var> pv;
 
+    struct symbol {
+        pv v_;
+        std::string name_;
+        symbol(pv v, std::string name) : v_(v), name_(name) {}
+        symbol() : name_("(none)") {}
+    };
+
     class symtab {
     public:
-        struct symbol {
-            pv v_;
-            std::string name_;
-            bool dyn_;
-            symbol(pv v, std::string name, bool dyn=false) :
-                v_(v), name_(name), dyn_(dyn) {}
-            symbol() : dyn_(false) {}
-        };
         symbol& lookup(std::string const& name);
-        symbol& insert(std::string const& name, pv v, bool dyn=false);
+        symbol& insert(std::string const& name, pv v);
         symtab() { push(); }
-        void push() {
-            syms.push_front(scope());
-        }
-        void pop() {
-            syms.pop_front();
-        }
-        symbol& operator[](std::string const& s) {
-            return lookup(s);
-        }
+        void push() { syms.push_front(scope()); }
+        void pop() { syms.pop_front(); }
+        symbol& operator[](std::string const& s) { return lookup(s); }
         void print(std::ostream& os) const;
     private:
         typedef std::map<std::string, symbol> scope;
@@ -119,6 +112,5 @@ namespace memory {
         v.print(os);
         return os;
     }
-
 }
 #endif

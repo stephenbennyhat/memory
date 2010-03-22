@@ -109,7 +109,7 @@ namespace memory {
         }
     }
 
-    symtab::symbol& symtab::lookup(std::string const &s) {
+    symbol& symtab::lookup(std::string const &s) {
         for (symstype::iterator i = syms.begin(); i != syms.end(); i++) {
             scope::iterator ci = (*i).find(s);
             if (ci != (*i).end())
@@ -118,8 +118,8 @@ namespace memory {
         return insert(s, pv(new var()));
     }
 
-    symtab::symbol& symtab::insert(std::string const& s, pv val, bool dyn) {
-        return syms.front()[s] = symbol(val, s, dyn);
+    symbol& symtab::insert(std::string const& s, pv val) {
+        return syms.front()[s] = symbol(val, s);
     }
 
     void
@@ -131,7 +131,6 @@ namespace memory {
             os << s << "scope: " << ++level << std::endl;
             for (scope::const_iterator si = sc.begin(); si != sc.end(); ++si) {
                 os << s << " " << si->first << "=" << si->second.v_
-                   << " (" << (si->second.dyn_ ? "dyn" : "lex") << ")"
                    << std::endl;
             }
         }

@@ -29,27 +29,10 @@ namespace memory {
     };
 
     class binder {
-        symtab& t_;
-        string name_;
-        bool dyn_;
         pv v_;
     public:
-        binder(symtab& t, symtab::symbol& s) :
-            t_(t), name_(s.name_), dyn_(s.dyn_), v_(s.v_) {
-        }
-        var& operator()() {
-            return *(dyn_ ? t_.lookup(name_).v_ : v_);
-        };
-    };
-
-    class dyn {
-        symtab& syms_;
-        string  s_;
-    public:
-        dyn(symtab& syms, string s) : syms_(syms), s_(s) {}
-        var& operator()() {
-            return *syms_.lookup(s_).v_;
-        }
+        binder(pv v) : v_(v) {}
+        var& operator()() { return *v_; }
     };
 
     class binopcall {
@@ -126,7 +109,7 @@ namespace memory {
              s_.push();
              for (size_t i = 0; i < env_.size(); i++)
                  s_.insert(env_[i], i >= args.size() ? pv(new var)
-                                                     : pv(new var(args[i])), true);
+                                                     : pv(new var(args[i])));
              var v = fn_();
              s_.pop();
              return v;
@@ -245,7 +228,7 @@ namespace memory {
             if (toks_[0].type() != lexer::name)
                 parseerror("invalid argument list");
             string s = toks_[0].str();
-            syms_.insert(s, pv(new var), true);
+            syms_.insert(s, pv(new var));
             params.push_back(s);
             toks_.consume();
             if (toks_[0].type() == ',') {
@@ -323,20 +306,20 @@ namespace memory {
     xfn
     parser::parsenameexpr() {
         trace t1("nameexpr", toks_);
-        symtab::symbol &v = syms_[toks_[0].str()];
+        symbol &v = syms_[toks_[0].str()];
         toks_.consume();
         if (toks_[0].type() == '(') {
-            return fncall(binder(syms_, v), parsearglist());
+            return fncall(binder(v.v_), parsearglist());
         }
         if (toks_[0].type() == '[') {
-            return parseindexexpr(binder(syms_, v));
+            return parseindexexpr(binder(v.v_));
         }
         if (toks_[0].type() == '=') {
             trace t2("assign", toks_);
             toks_.consume();
-            return assign(binder(syms_, v), parseexpr());
+            return assign(binder(v.v_), parseexpr());
         }
-        return binder(syms_, v);
+        return binder(v.v_);
     }
 
     vector<xfn>
