@@ -93,7 +93,16 @@ namespace memory {
                 : v_(v), name_(name), level_(level), index_(index)  {}
         symbol() : name_("(none)"), level_(0) {}
         bool global() const { return level_ == 0; }
+        bool local() const { return level_ == 1; }
+        bool closed() const { return level_ > 1; }
+        void print(std::ostream&) const;
     };
+
+    inline
+    std::ostream& operator<<(std::ostream& os, symbol const& s) {
+        s.print(os);
+        return os;
+    }
 
     class symtab {
     public:
@@ -109,6 +118,7 @@ namespace memory {
         typedef std::list<scope> symstype;
         symstype syms;
     };
+
     inline
     std::ostream& operator<<(std::ostream& os, symtab const& v) {
         v.print(os);

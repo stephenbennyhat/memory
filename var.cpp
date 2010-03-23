@@ -131,12 +131,19 @@ namespace memory {
             os << s << "scope: " << ++level << std::endl;
             for (scope::const_iterator si = sc.begin(); si != sc.end(); ++si) {
                 string const& n = si->first;
-                symbol const& sym = si->second;
-                os << s << " " << n << "=" << sym.v_
-                   << "(level=" << sym.level_ << " index=" << sym.index_ << ")"
-                   << std::endl;
+                os << n << " " << si->second;
             }
         }
+    }
+
+    void
+    symbol::print(std::ostream& os) const {
+        os << name_ << "=";
+        if (v_)
+           os << *v_;
+        else
+           os << v_;
+        os << " (level=" << level_ << " index=" << index_ << ")";
     }
 }
 

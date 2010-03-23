@@ -12,6 +12,7 @@ namespace memory {
 
     struct env {
         vector<pv> v_;
+        vector<pv> c_;
     };
 
     vector<pv>
@@ -44,13 +45,27 @@ namespace memory {
     public:
         local(symbol const& s) : i_(s.index_) {}
         pv operator()(env e) {
-            return e.v_[i_];
+            std::cerr << "looking up local " << i_ << std::endl;
+            return e.v_.at(i_);
+        }
+    };
+
+    class close {
+        int i_;
+    public:
+        close(symbol const& s) : i_(s.index_) {}
+        pv operator()(env e) {
+            std::cerr << "looking up closure " << i_ << std::endl;
+            return e.c_.at(i_);
         }
     };
 
     xfn binder(symbol const& s) {
+       std::cerr << "binding: " << s << std::endl;
        if (s.global())
-               return global(s);
+           return global(s);
+       if (s.closed())
+           return close(s);
        return local(s);
     }
 
@@ -115,15 +130,16 @@ namespace memory {
 
     class closure {
         xfn fn_;
-        env e_;
+        vector<pv> c_;
     public:
-        closure(xfn fn) : fn_(fn) {}
-        pv operator()(env e) {
-            e_ = e; //XXX
+        closure(xfn fn, vector<pv> const& c = vector<pv>()) : fn_(fn), c_(c) {}
+        pv operator()(env) { // what do we do with the env?
             return pv(new var(*this));
         }
         var operator()(vector<pv> const& args) {
-            e_.v_ = args; //XXX
+            env e_;
+            e_.v_ = args;
+            e_.c_ = c_;
             return *fn_(e_);
         }
     };
@@ -247,11 +263,12 @@ namespace memory {
                 continue;
             }
         }
-        if (0) std::cout << syms_ << std::endl;
+        if (0) std::cerr << syms_ << std::endl;
         toks_.consume();
         xfn e = parseexpr();
+        xfn f = closure(e);
         syms_.pop();
-        return closure(e);
+        return f;
     }
 
     // this mechanism pinched from the llvm tutorial
