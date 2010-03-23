@@ -87,14 +87,18 @@ namespace memory {
     struct symbol {
         pv v_;
         std::string name_;
-        symbol(pv v, std::string name) : v_(v), name_(name) {}
-        symbol() : name_("(none)") {}
+        int level_;
+        int index_;
+        symbol(pv v, std::string name, int level=0, int index=0)
+                : v_(v), name_(name), level_(level), index_(index)  {}
+        symbol() : name_("(none)"), level_(0) {}
+        bool global() const { return level_ == 0; }
     };
 
     class symtab {
     public:
         symbol& lookup(std::string const& name);
-        symbol& insert(std::string const& name, pv v);
+        symbol& insert(std::string const& name, pv v, int index=0);
         symtab() { push(); }
         void push() { syms.push_front(scope()); }
         void pop() { syms.pop_front(); }

@@ -21,5 +21,9 @@ print(y == y);
 
 f = fn (a, b) { a + b; };
 print(f(0, 1));
+#^ 0x1
 print(f(1, 1));
+#^ 0x2
 print(f(1, 2));
+#^ 0x3
+

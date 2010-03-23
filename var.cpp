@@ -118,8 +118,8 @@ namespace memory {
         return insert(s, pv(new var()));
     }
 
-    symbol& symtab::insert(std::string const& s, pv val) {
-        return syms.front()[s] = symbol(val, s);
+    symbol& symtab::insert(std::string const& s, pv val, int index) {
+        return syms.front()[s] = symbol(val, s, syms.size() - 1, index);
     }
 
     void
@@ -130,7 +130,10 @@ namespace memory {
             string s = ""; for (int i = 0; i < level; i++) s += " ";
             os << s << "scope: " << ++level << std::endl;
             for (scope::const_iterator si = sc.begin(); si != sc.end(); ++si) {
-                os << s << " " << si->first << "=" << si->second.v_
+                string const& n = si->first;
+                symbol const& sym = si->second;
+                os << s << " " << n << "=" << sym.v_
+                   << "(level=" << sym.level_ << " index=" << sym.index_ << ")"
                    << std::endl;
             }
         }

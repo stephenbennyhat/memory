@@ -35,9 +35,24 @@ namespace memory {
     class global {
         pv v_;
     public:
-        global(pv v) : v_(v) {}
+        global(symbol const& s) : v_(s.v_) {}
         pv operator()(env e) { return v_; }
     };
+
+    class local {
+        int i_;
+    public:
+        local(symbol const& s) : i_(s.index_) {}
+        pv operator()(env e) {
+            return e.v_[i_];
+        }
+    };
+
+    xfn binder(symbol const& s) {
+       if (s.global())
+               return global(s);
+       return local(s);
+    }
 
     class binopcall {
         opfn op_;
@@ -104,11 +119,12 @@ namespace memory {
     public:
         closure(xfn fn) : fn_(fn) {}
         pv operator()(env e) {
-            e_ = e;
+            e_ = e; //XXX
             return pv(new var(*this));
         }
         var operator()(vector<pv> const& args) {
-             return *fn_(e_);
+            e_.v_ = args; //XXX
+            return *fn_(e_);
         }
     };
 
@@ -217,22 +233,21 @@ namespace memory {
         trace t1("fn", toks_);
         toks_.consume();
         syms_.push();
-        vector<string> params;
         match('(');
-        for (;;) {
+        for (int index = 0;; index++) {
             if (toks_[0].type() == ')')
                 break;
             if (toks_[0].type() != lexer::name)
                 parseerror("invalid argument list");
             string s = toks_[0].str();
-            syms_.insert(s, pv(new var));
-            params.push_back(s);
+            syms_.insert(s, pv(), index);
             toks_.consume();
             if (toks_[0].type() == ',') {
                 toks_.consume();
                 continue;
             }
         }
+        if (0) std::cout << syms_ << std::endl;
         toks_.consume();
         xfn e = parseexpr();
         syms_.pop();
@@ -306,17 +321,17 @@ namespace memory {
         symbol &v = syms_[toks_[0].str()];
         toks_.consume();
         if (toks_[0].type() == '(') {
-            return fncall(global(v.v_), parsearglist());
+            return fncall(binder(v), parsearglist());
         }
         if (toks_[0].type() == '[') {
-            return parseindexexpr(global(v.v_));
+            return parseindexexpr(binder(v));
         }
         if (toks_[0].type() == '=') {
             trace t2("assign", toks_);
             toks_.consume();
-            return assign(global(v.v_), parseexpr());
+            return assign(binder(v), parseexpr());
         }
-        return global(v.v_);
+        return binder(v);
     }
 
     vector<xfn>
