@@ -97,7 +97,7 @@ namespace memory {
         }
     }
 
-    std::string var::typestr(vartype t) {
+    string var::typestr(vartype t) {
         switch (t) {
         default:      return "unknown"; break;
         case tnull:   return "(null)"; break;
@@ -109,42 +109,19 @@ namespace memory {
         }
     }
 
-    symbol& symtab::lookup(std::string const &s) {
-        for (symstype::iterator i = syms.begin(); i != syms.end(); i++) {
-            scope::iterator ci = (*i).find(s);
-            if (ci != (*i).end())
-                return ci->second;
-        }
-        return insert(s, pv(new var()));
+    pv& env::operator[](string s) {
+        if (0) std::cerr << "looking up " << s << std::endl;
+        env *p = this;
+        do {
+           scope::iterator i = p->v_.find(s);
+           if (i != p->v_.end()) {
+               if (0) std::cerr << "found " << s << std::endl;
+               return i->second;
+           }
+           p = p->prev_;
+        } while (p);
+        if (0) std::cerr << "not found " << s << std::endl;
+        return v_[s] = pv(new var());
     }
 
-    symbol& symtab::insert(std::string const& s, pv val, int index) {
-        return syms.front()[s] = symbol(val, s, syms.size() - 1, index);
-    }
-
-    void
-    symtab::print(std::ostream& os) const {
-        int level = 0;
-        for (symstype::const_iterator bi = syms.begin(); bi != syms.end(); ++bi) {
-            scope const& sc = *bi;
-            string s = ""; for (int i = 0; i < level; i++) s += " ";
-            os << s << "scope: " << ++level << std::endl;
-            for (scope::const_iterator si = sc.begin(); si != sc.end(); ++si) {
-                string const& n = si->first;
-                os << n << " " << si->second;
-            }
-        }
-    }
-
-    void
-    symbol::print(std::ostream& os) const {
-        os << name_ << "=";
-        if (v_)
-           os << *v_;
-        else
-           os << v_;
-        os << " (level=" << level_ << " index=" << index_ << ")";
-    }
-}
-
-
+};

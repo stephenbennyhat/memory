@@ -10,13 +10,8 @@ namespace memory {
     using std::string;
     using tracer::trace;
 
-    struct env {
-        vector<pv> v_;
-        vector<pv> c_;
-    };
-
     vector<pv>
-    reify(vector<xfn> const &args, env e) {
+    reify(vector<xfn> const& args, env& e) {
        vector<pv> vv(args.size());
        for (size_t i = 0; i < args.size(); i++) {
           vv[i] = args[i](e);
@@ -28,46 +23,20 @@ namespace memory {
         pv v_;
     public:
         constantly(var const& t) : v_(new var(t)) {}
-        pv const& operator()(env e) {
+        pv const& operator()(env& e) {
             return v_;
         };
     };
 
-    class global {
-        pv v_;
+    class binding {
+        string s_;
     public:
-        global(symbol const& s) : v_(s.v_) {}
-        pv operator()(env e) { return v_; }
-    };
-
-    class local {
-        int i_;
-    public:
-        local(symbol const& s) : i_(s.index_) {}
-        pv operator()(env e) {
-            std::cerr << "looking up local " << i_ << std::endl;
-            return e.v_.at(i_);
+        binding(string const& s) : s_(s) {}
+        pv& operator()(env& e) {
+            pv& p = e[s_];
+            return p;
         }
     };
-
-    class close {
-        int i_;
-    public:
-        close(symbol const& s) : i_(s.index_) {}
-        pv operator()(env e) {
-            std::cerr << "looking up closure " << i_ << std::endl;
-            return e.c_.at(i_);
-        }
-    };
-
-    xfn binder(symbol const& s) {
-       std::cerr << "binding: " << s << std::endl;
-       if (s.global())
-           return global(s);
-       if (s.closed())
-           return close(s);
-       return local(s);
-    }
 
     class binopcall {
         opfn op_;
@@ -75,7 +44,7 @@ namespace memory {
         xfn a2_;
     public:
         binopcall(opfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
-        pv operator()(env e) { 
+        pv operator()(env& e) { 
             return pv(new var(op_(a1_(e), a2_(e))));
         }
     };
@@ -84,8 +53,8 @@ namespace memory {
         xfn fn_;
         vector<xfn> args_;
     public:
-        fncall(xfn fn, vector<xfn> const& args = vector<xfn>()) : fn_(fn), args_(args) {}
-        pv operator()(env e) {
+        fncall(xfn fn, vector<xfn> const& args) : fn_(fn), args_(args) {}
+        pv operator()(env& e) {
             return pv(new var(fn_(e)->getfunction()(reify(args_, e))));
         }
     };
@@ -94,7 +63,7 @@ namespace memory {
         vector<xfn> stmts_;
     public:
         compstmt(vector<xfn> const& stmts): stmts_(stmts) {}
-        pv operator()(env e) {
+        pv operator()(env& e) {
             pv v;
             for (vector<xfn>::const_iterator i = stmts_.begin(); i != stmts_.end(); i++)
                 v = (*i)(e);
@@ -108,7 +77,7 @@ namespace memory {
         xfn s2_;
     public:
         ifexpr(xfn e, xfn s1, xfn s2 = constantly(0)) : e_(e), s1_(s1), s2_(s2) {}
-        pv operator()(env e) {
+        pv operator()(env& e) {
             bool b = *e_(e);
             return b ? s1_(e) : s2_(e);
         }
@@ -119,7 +88,7 @@ namespace memory {
         xfn s_;
     public:
         whileexpr(xfn e, xfn s) : e_(e), s_(s) {}
-        pv operator()(env e) {
+        pv operator()(env& e) {
             pv v;
             while (*e_(e)) {
                v = s_(e);
@@ -130,40 +99,46 @@ namespace memory {
 
     class closure {
         xfn fn_;
-        vector<pv> c_;
+        vector<string> args_;
+        env e_;
     public:
-        closure(xfn fn, vector<pv> const& c = vector<pv>()) : fn_(fn), c_(c) {}
-        pv operator()(env) { // what do we do with the env?
+        closure(xfn fn, vector<string>const& args) : fn_(fn), args_(args) {}
+        pv operator()(env& e) { // what do we do with the env?
+            e_ = e;
             return pv(new var(*this));
         }
-        var operator()(vector<pv> const& args) {
-            env e_;
-            e_.v_ = args;
-            e_.c_ = c_;
-            return *fn_(e_);
+        var operator()(vector<pv> const& v) {
+            env ee;
+            ee.setprev(&e_);
+            if (0) std::cerr << "v.sz=" << v.size() << " a.sz=" << args_.size() << std::endl;
+            for (size_t i = 0; i < args_.size(); i++) {
+                ee[args_.at(i)] = v.at(i);
+            }
+            if (0) std::cerr << "calling fn" << std::endl;
+            return *fn_(ee);
         }
     };
 
     class assign {
-        xfn lhs_;
+        lfn lhs_;
         xfn rhs_;
     public:
-        assign(xfn lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
-        pv operator()(env e) {
-            pv l = lhs_(e);
+        assign(lfn lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
+        pv operator()(env& e) {
+            pv& l = lhs_(e);
             *l = *rhs_(e);
             return l;
         }
     };
 
     parser::parser() {
-        syms_.insert("read", pv(new var(readfn)));
-        syms_.insert("print", pv(new var(printfn)));
-        syms_.insert("write", pv(new var(writefn)));
-        syms_.insert("crc16", pv(new var(crc16fn)));
-        syms_.insert("range", pv(new var(rangefn)));
-        syms_.insert("offset", pv(new var(offsetfn)));
-        syms_.insert("join", pv(new var(joinfn)));
+        syms_["read"] = pv(new var(readfn));
+        syms_["print"] = pv(new var(printfn));
+        syms_["write"] = pv(new var(writefn));
+        syms_["crc16"] = pv(new var(crc16fn));
+        syms_["range"] = pv(new var(rangefn));
+        syms_["offset"] = pv(new var(offsetfn));
+        syms_["join"] = pv(new var(joinfn));
 
         ops_[lexer::eqtok] = op(5, eqop);
         ops_[lexer::netok] = op(5, neop);
@@ -204,9 +179,8 @@ namespace memory {
     void
     parser::parsefile() {
         while (toks_[0].type() != tokstream::eof) {
-            env e;
-            pv v(parsestmt()(e));
-            syms_.insert("_", v);
+            pv v(parsestmt()(syms_));
+            syms_["_"] = v;
         }
     }
 
@@ -248,7 +222,7 @@ namespace memory {
     parser::parsefn() {
         trace t1("fn", toks_);
         toks_.consume();
-        syms_.push();
+        vector<string> args;
         match('(');
         for (int index = 0;; index++) {
             if (toks_[0].type() == ')')
@@ -256,18 +230,16 @@ namespace memory {
             if (toks_[0].type() != lexer::name)
                 parseerror("invalid argument list");
             string s = toks_[0].str();
-            syms_.insert(s, pv(), index);
+            args.push_back(s);
             toks_.consume();
             if (toks_[0].type() == ',') {
                 toks_.consume();
                 continue;
             }
         }
-        if (0) std::cerr << syms_ << std::endl;
         toks_.consume();
         xfn e = parseexpr();
-        xfn f = closure(e);
-        syms_.pop();
+        xfn f = closure(e, args);
         return f;
     }
 
@@ -335,20 +307,20 @@ namespace memory {
     xfn
     parser::parsenameexpr() {
         trace t1("nameexpr", toks_);
-        symbol &v = syms_[toks_[0].str()];
+        string s = toks_[0].str();
         toks_.consume();
         if (toks_[0].type() == '(') {
-            return fncall(binder(v), parsearglist());
+            return fncall(binding(s), parsearglist());
         }
         if (toks_[0].type() == '[') {
-            return parseindexexpr(binder(v));
+            return parseindexexpr(binding(s));
         }
         if (toks_[0].type() == '=') {
             trace t2("assign", toks_);
             toks_.consume();
-            return assign(binder(v), parseexpr());
+            return assign(binding(s), parseexpr());
         }
-        return binder(v);
+        return binding(s);
     }
 
     vector<xfn>

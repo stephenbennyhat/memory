@@ -10,9 +10,14 @@
 namespace memory {
     class var;
     class env;
+
     typedef struct port::shared_ptr<var> pv;
+    typedef struct port::shared_ptr<env> pe;
+
     typedef port::function<var (std::vector<pv> const&)> fn;
-    typedef port::function<pv (env)> xfn;
+    typedef port::function<pv (env&)> xfn;
+    typedef port::function<pv& (env&)> lfn;
+
     class var {
     public:
         enum vartype {
@@ -25,7 +30,8 @@ namespace memory {
         };
 
         struct type_error : public std::exception {
-            type_error(vartype const& exp, vartype const& was, std::string const& s = "") {
+            type_error(vartype const& exp, vartype const& was,
+                       std::string const& s = "") {
                 s_ = "type error: " + typestr(was) + "/" + typestr(exp);
                 if (!s_.empty())
                     s_ += ": " +  s;
@@ -84,46 +90,14 @@ namespace memory {
         return os;
     }
 
-    struct symbol {
-        pv v_;
-        std::string name_;
-        int level_;
-        int index_;
-        symbol(pv v, std::string name, int level=0, int index=0)
-                : v_(v), name_(name), level_(level), index_(index)  {}
-        symbol() : name_("(none)"), level_(0) {}
-        bool global() const { return level_ == 0; }
-        bool local() const { return level_ == 1; }
-        bool closed() const { return level_ > 1; }
-        void print(std::ostream&) const;
-    };
-
-    inline
-    std::ostream& operator<<(std::ostream& os, symbol const& s) {
-        s.print(os);
-        return os;
-    }
-
-    class symtab {
+    class env {
+        typedef std::map<std::string, pv> scope;
+        scope v_;
+        env* prev_;
     public:
-        symbol& lookup(std::string const& name);
-        symbol& insert(std::string const& name, pv v, int index=0);
-        symtab() { push(); }
-        void push() { syms.push_front(scope()); }
-        void pop() { syms.pop_front(); }
-        symbol& operator[](std::string const& s) { return lookup(s); }
-        void print(std::ostream& os) const;
-    private:
-        typedef std::map<std::string, symbol> scope;
-        typedef std::list<scope> symstype;
-        symstype syms;
+        env() : prev_(0 ) {}
+        pv& operator[](std::string s);
+        void setprev(env* p) { prev_ = p; }
     };
-
-    inline
-    std::ostream& operator<<(std::ostream& os, symtab const& v) {
-        v.print(os);
-        return os;
-    }
-
 }
 #endif
