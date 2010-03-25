@@ -43,7 +43,7 @@ namespace memory {
 
         void match(int t);
 
-        void checktype(var::vartype t1, var::vartype t2) const;
+        void checktype(vartype t1, vartype t2) const;
         void parseerror(std::string s);
 
         void parsefile();

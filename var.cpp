@@ -97,7 +97,7 @@ namespace memory {
         }
     }
 
-    string var::typestr(vartype t) {
+    string typestr(vartype t) {
         switch (t) {
         default:      return "unknown"; break;
         case tnull:   return "(null)"; break;

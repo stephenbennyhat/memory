@@ -1,0 +1,14 @@
+f = fn (a) {
+  fn () {
+    a = a + 1;
+  };
+};
+
+g=f(0);
+a=10;
+print(g());
+#^ 0x1
+print(g());
+#^ 0x2
+print(a);
+#^ 0xa

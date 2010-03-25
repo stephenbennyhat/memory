@@ -18,7 +18,7 @@ namespace memory {
             return var();
         }
         pv v = args[0];
-        v->check(var::tstring);
+        v->check(tstring);
         std::string filename = v->getstring();
         mem::memory m;
         readmoto(filename, m); 
@@ -94,18 +94,18 @@ namespace memory {
 
     var
     add(pv const& v1, pv const& v2) {
-        if (v1->is(var::tnumber) && v2->is(var::tnumber))
+        if (v1->is(tnumber) && v2->is(tnumber))
             return v1->getnumber() + v2->getnumber();
-        if (v1->is(var::tmemory) && v2->is(var::tmemory))
+        if (v1->is(tmemory) && v2->is(tmemory))
             return join(v1->getmemory(), v2->getmemory());
-        throw var::type_error(v1->type(), v2->type(), "cannot add");
+        throw type_error(v1->type(), v2->type(), "cannot add");
     }
 
     var
     sub(pv const& v1, pv const& v2) {
-        if (v1->is(var::tnumber) && v2->is(var::tnumber))
+        if (v1->is(tnumber) && v2->is(tnumber))
             return v1->getnumber() - v2->getnumber();
-        throw var::type_error(v1->type(), v2->type(), "cannot sub");
+        throw type_error(v1->type(), v2->type(), "cannot sub");
     }
 
     var
@@ -116,9 +116,9 @@ namespace memory {
     var
     eqop(pv const& v1, pv const& v2) {
         if (v1->type() != v2->type()) return false;
-        if (v1->is(var::tnumber))
+        if (v1->is(tnumber))
            return v1->getnumber() == v2->getnumber();
-        throw var::type_error(v1->type(), v2->type(), "cannot cmp");
+        throw type_error(v1->type(), v2->type(), "cannot cmp");
     }
 
     var
@@ -128,27 +128,27 @@ namespace memory {
 
     var
     gtop(pv const& v1, pv const& v2) {
-        if (v1->is(var::tnumber) && v2->is(var::tnumber))
+        if (v1->is(tnumber) && v2->is(tnumber))
            return v1->getnumber() > v2->getnumber();
-        throw var::type_error(v1->type(), v2->type(), "cannot cmp");
+        throw type_error(v1->type(), v2->type(), "cannot cmp");
     }
 
     var
     ltop(pv const& v1, pv const& v2) {
-        if (v1->is(var::tnumber) && v2->is(var::tnumber))
+        if (v1->is(tnumber) && v2->is(tnumber))
            return v1->getnumber() < v2->getnumber();
-        throw var::type_error(v1->type(), v2->type(), "cannot cmp");
+        throw type_error(v1->type(), v2->type(), "cannot cmp");
     }
 
     var
     index(pv const& v1, pv const& v2) {
-        if (v1->is(var::tmemory)) {
-            if (v2->is(var::trange))
+        if (v1->is(tmemory)) {
+            if (v2->is(trange))
                 return crop(v1->getmemory(), v2->getrange());
-            if (v2->is(var::tnumber))
+            if (v2->is(tnumber))
                 return v1->getmemory()[v2->getnumber()];
         }
-        throw var::type_error(v1->type(), v2->type(), "cannot index");
+        throw type_error(v1->type(), v2->type(), "cannot index");
     }
 
     var

@@ -18,29 +18,32 @@ namespace memory {
     typedef port::function<pv (pe)> xfn;
     typedef port::function<pv& (pe)> lfn;
 
+    enum vartype {
+       tnull,
+       tmemory,
+       trange,
+       tnumber,
+       tstring,
+       tfunction,
+    };
+
+    std::string typestr(vartype t);
+
+    struct type_error : public std::exception {
+        type_error(vartype const& exp, vartype const& was,
+                   std::string const& s = "") {
+            s_ = "type error: " + typestr(was) + "/" + typestr(exp);
+            if (!s_.empty())
+                s_ += ": " +  s;
+        }
+        virtual char const *what() const throw() { return s_.c_str(); }
+        ~type_error() throw() {}
+    private:
+        std::string s_;
+    };
+
     class var {
     public:
-        enum vartype {
-           tnull,
-           tmemory,
-           trange,
-           tnumber,
-           tstring,
-           tfunction,
-        };
-
-        struct type_error : public std::exception {
-            type_error(vartype const& exp, vartype const& was,
-                       std::string const& s = "") {
-                s_ = "type error: " + typestr(was) + "/" + typestr(exp);
-                if (!s_.empty())
-                    s_ += ": " +  s;
-            }
-            virtual char const *what() const throw() { return s_.c_str(); }
-            ~type_error() throw() {}
-        private:
-            std::string s_;
-        };
 
         var();
         var(mem::memory const& m);
@@ -60,12 +63,11 @@ namespace memory {
 
         bool is(vartype t) const { return type() == t; }
         void check(vartype t) const;
-        static std::string typestr(vartype t);
     private:
         struct impl {
             void check(vartype t) const {
                 if (t != type())
-                    throw var::type_error(t, type(), "type check failed");
+                    throw type_error(t, type(), "type check failed");
             };
             template <class T>
                T noconvert(vartype t) const {
