@@ -15,8 +15,8 @@ namespace memory {
     typedef struct port::shared_ptr<env> pe;
 
     typedef port::function<var (std::vector<pv> const&)> fn;
-    typedef port::function<pv (env&)> xfn;
-    typedef port::function<pv& (env&)> lfn;
+    typedef port::function<pv (pe)> xfn;
+    typedef port::function<pv& (pe)> lfn;
 
     class var {
     public:
@@ -93,11 +93,11 @@ namespace memory {
     class env {
         typedef std::map<std::string, pv> scope;
         scope v_;
-        env* prev_;
+        pe prev_;
     public:
-        env() : prev_(0 ) {}
+        env() {}
         pv& operator[](std::string s);
-        void setprev(env* p) { prev_ = p; }
+        void setprev(pe p) { prev_ = p; }
     };
 }
 #endif

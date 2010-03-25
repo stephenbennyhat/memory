@@ -37,7 +37,7 @@ namespace memory {
         optab ops_;
         tokstream toks_;
 
-        env syms_;
+        pe syms_;
 
         void printops(std::ostream& os) const;
 

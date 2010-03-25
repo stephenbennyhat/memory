@@ -118,7 +118,7 @@ namespace memory {
                if (0) std::cerr << "found " << s << std::endl;
                return i->second;
            }
-           p = p->prev_;
+           p = p->prev_.get();
         } while (p);
         if (0) std::cerr << "not found " << s << std::endl;
         return v_[s] = pv(new var());

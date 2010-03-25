@@ -11,7 +11,7 @@ namespace memory {
     using tracer::trace;
 
     vector<pv>
-    reify(vector<xfn> const& args, env& e) {
+    reify(vector<xfn> const& args, pe e) {
        vector<pv> vv(args.size());
        for (size_t i = 0; i < args.size(); i++) {
           vv[i] = args[i](e);
@@ -23,7 +23,7 @@ namespace memory {
         pv v_;
     public:
         constantly(var const& t) : v_(new var(t)) {}
-        pv const& operator()(env& e) {
+        pv const& operator()(pe e) {
             return v_;
         };
     };
@@ -32,8 +32,8 @@ namespace memory {
         string s_;
     public:
         binding(string const& s) : s_(s) {}
-        pv& operator()(env& e) {
-            pv& p = e[s_];
+        pv& operator()(pe e) {
+            pv& p = (*e)[s_];
             return p;
         }
     };
@@ -44,7 +44,7 @@ namespace memory {
         xfn a2_;
     public:
         binopcall(opfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
-        pv operator()(env& e) { 
+        pv operator()(pe e) { 
             return pv(new var(op_(a1_(e), a2_(e))));
         }
     };
@@ -54,7 +54,7 @@ namespace memory {
         vector<xfn> args_;
     public:
         fncall(xfn fn, vector<xfn> const& args) : fn_(fn), args_(args) {}
-        pv operator()(env& e) {
+        pv operator()(pe e) {
             return pv(new var(fn_(e)->getfunction()(reify(args_, e))));
         }
     };
@@ -63,7 +63,7 @@ namespace memory {
         vector<xfn> stmts_;
     public:
         compstmt(vector<xfn> const& stmts): stmts_(stmts) {}
-        pv operator()(env& e) {
+        pv operator()(pe e) {
             pv v;
             for (vector<xfn>::const_iterator i = stmts_.begin(); i != stmts_.end(); i++)
                 v = (*i)(e);
@@ -77,7 +77,7 @@ namespace memory {
         xfn s2_;
     public:
         ifexpr(xfn e, xfn s1, xfn s2 = constantly(0)) : e_(e), s1_(s1), s2_(s2) {}
-        pv operator()(env& e) {
+        pv operator()(pe e) {
             bool b = *e_(e);
             return b ? s1_(e) : s2_(e);
         }
@@ -88,7 +88,7 @@ namespace memory {
         xfn s_;
     public:
         whileexpr(xfn e, xfn s) : e_(e), s_(s) {}
-        pv operator()(env& e) {
+        pv operator()(pe e) {
             pv v;
             while (*e_(e)) {
                v = s_(e);
@@ -100,19 +100,19 @@ namespace memory {
     class closure {
         xfn fn_;
         vector<string> args_;
-        env e_;
+        pe e_;
     public:
         closure(xfn fn, vector<string>const& args) : fn_(fn), args_(args) {}
-        pv operator()(env& e) { // what do we do with the env?
+        pv operator()(pe e) { // what do we do with the env?
             e_ = e;
             return pv(new var(*this));
         }
         var operator()(vector<pv> const& v) {
-            env ee;
-            ee.setprev(&e_);
+            pe ee(new env);;
+            ee->setprev(e_);
             if (0) std::cerr << "v.sz=" << v.size() << " a.sz=" << args_.size() << std::endl;
             for (size_t i = 0; i < args_.size(); i++) {
-                ee[args_.at(i)] = v.at(i);
+                (*ee)[args_.at(i)] = v.at(i);
             }
             if (0) std::cerr << "calling fn" << std::endl;
             return *fn_(ee);
@@ -124,7 +124,7 @@ namespace memory {
         xfn rhs_;
     public:
         assign(lfn lhs, xfn rhs) : lhs_(lhs), rhs_(rhs) {}
-        pv operator()(env& e) {
+        pv operator()(pe e) {
             pv& l = lhs_(e);
             *l = *rhs_(e);
             return l;
@@ -132,13 +132,15 @@ namespace memory {
     };
 
     parser::parser() {
-        syms_["read"] = pv(new var(readfn));
-        syms_["print"] = pv(new var(printfn));
-        syms_["write"] = pv(new var(writefn));
-        syms_["crc16"] = pv(new var(crc16fn));
-        syms_["range"] = pv(new var(rangefn));
-        syms_["offset"] = pv(new var(offsetfn));
-        syms_["join"] = pv(new var(joinfn));
+        syms_ = pe(new env);
+
+        (*syms_)["read"] = pv(new var(readfn));
+        (*syms_)["print"] = pv(new var(printfn));
+        (*syms_)["write"] = pv(new var(writefn));
+        (*syms_)["crc16"] = pv(new var(crc16fn));
+        (*syms_)["range"] = pv(new var(rangefn));
+        (*syms_)["offset"] = pv(new var(offsetfn));
+        (*syms_)["join"] = pv(new var(joinfn));
 
         ops_[lexer::eqtok] = op(5, eqop);
         ops_[lexer::netok] = op(5, neop);
@@ -180,7 +182,7 @@ namespace memory {
     parser::parsefile() {
         while (toks_[0].type() != tokstream::eof) {
             pv v(parsestmt()(syms_));
-            syms_["_"] = v;
+            (*syms_)["_"] = v;
         }
     }
 
