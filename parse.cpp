@@ -23,19 +23,14 @@ namespace memory {
         pv v_;
     public:
         constantly(var const& t) : v_(new var(t)) {}
-        pv const& operator()(pe e) {
-            return v_;
-        };
+        pv const& operator()(pe e) { return v_; };
     };
 
     class binding {
         string s_;
     public:
         binding(string const& s) : s_(s) {}
-        pv& operator()(pe e) {
-            pv& p = (*e)[s_];
-            return p;
-        }
+        pv& operator()(pe e) { return (*e)[s_]; }
     };
 
     class binopcall {
@@ -76,10 +71,9 @@ namespace memory {
         xfn s1_;
         xfn s2_;
     public:
-        ifexpr(xfn e, xfn s1, xfn s2 = constantly(0)) : e_(e), s1_(s1), s2_(s2) {}
+        ifexpr(xfn e, xfn s1, xfn s2 = constantly(var())) : e_(e), s1_(s1), s2_(s2) {}
         pv operator()(pe e) {
-            bool b = *e_(e);
-            return b ? s1_(e) : s2_(e);
+            return *e_(e) ? s1_(e) : s2_(e);
         }
     };
 
@@ -103,18 +97,16 @@ namespace memory {
         pe e_;
     public:
         closure(xfn fn, vector<string>const& args) : fn_(fn), args_(args) {}
-        pv operator()(pe e) { // what do we do with the env?
+        pv operator()(pe const& e) {
             e_ = e;
             return pv(new var(*this));
         }
         var operator()(vector<pv> const& v) {
             pe ee(new env);;
             ee->setprev(e_);
-            if (0) std::cerr << "v.sz=" << v.size() << " a.sz=" << args_.size() << std::endl;
             for (size_t i = 0; i < args_.size(); i++) {
                 (*ee)[args_.at(i)] = v.at(i);
             }
-            if (0) std::cerr << "calling fn" << std::endl;
             return *fn_(ee);
         }
     };
@@ -240,9 +232,7 @@ namespace memory {
             }
         }
         toks_.consume();
-        xfn e = parseexpr();
-        xfn f = closure(e, args);
-        return f;
+        return closure(parseexpr(), args);
     }
 
     // this mechanism pinched from the llvm tutorial
@@ -311,12 +301,10 @@ namespace memory {
         trace t1("nameexpr", toks_);
         string s = toks_[0].str();
         toks_.consume();
-        if (toks_[0].type() == '(') {
+        if (toks_[0].type() == '(')
             return fncall(binding(s), parsearglist());
-        }
-        if (toks_[0].type() == '[') {
+        if (toks_[0].type() == '[')
             return parseindexexpr(binding(s));
-        }
         if (toks_[0].type() == '=') {
             trace t2("assign", toks_);
             toks_.consume();
@@ -329,8 +317,7 @@ namespace memory {
     parser::parsearglist() {
         toks_.consume();
         vector<xfn> args;
-        if (toks_[0].type() != ')')
-        {
+        if (toks_[0].type() != ')') {
            for (;;) {
                xfn e = parseexpr();
                args.push_back(e);
@@ -346,8 +333,7 @@ namespace memory {
     }
 
     xfn
-    parser::parseparenexpr()
-    {
+    parser::parseparenexpr() {
         toks_.consume();
         xfn v = parseexpr();
         if (toks_[0].type() != ')')

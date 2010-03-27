@@ -59,31 +59,17 @@ namespace memory {
     lexer::next() {
         for (;;) {
             char ch = getchar();
+            string s;
             if (!is_) break;
-            if (ch == '\n' || ch == '\r') {
+            switch (ch) {
+            case '\n': case '\r': case ' ': case '\t':
                 continue;
-            }
-            if (std::isspace(ch))
-                continue;
-            if (ch == '#') {
+            case '#':
                 do
                     ch = getchar();
                 while (is_ && ch != '\n');
                 continue;
-            }
-            if (ch == '"') {
-                string s = "";
-                ch = getchar();
-                while (is_ && ch != '"') {
-                    s.push_back(ch);
-                    ch = getchar();
-                }
-                if (!is_) return token(tokstream::eof, "", pos_, "eof");
-                return token(str, s, pos_, "str");
-            }
-            switch (ch) {
-            case ';':
-            case ',':
+            case ';': case ',':
             case '+': case '-':
             case '*': case '/':
             case '<': case '>':
@@ -106,25 +92,32 @@ namespace memory {
                 if (ch == '.') return token(dotdot, "", pos_, "..");
                 is_.putback(ch);
                 return token('.', "", pos_, '.');
-            }
-            string s;
-            if (std::isalnum(ch) || ch == '_') {
-                do {
+            case '"': {
+                ch = getchar();
+                while (is_ && ch != '"') {
                     s.push_back(ch);
                     ch = getchar();
-                } while (is_ && (isalnum(ch) || ch == '_'));
-                if (is_) is_.putback(ch);
-
-                if (validnumber(s)) return token(num, s, pos_, "num");
-                if (s == "fn") return token(fn, s, pos_, "fn");
-                if (s == "if") return token(iftok, s, pos_, "if");
-                if (s == "else") return token(elsetok, s, pos_, "else");
-                if (s == "while") return token(whiletok, s, pos_, "if");
-
-                return token(name, s, pos_, "name");
+                }
+                if (!is_) return token(tokstream::eof, "", pos_, "eof");
+                return token(str, s, pos_, "str");
+                }
+            default:
+                if (std::isalnum(ch) || ch == '_') {
+                    do {
+                        s.push_back(ch);
+                        ch = getchar();
+                    } while (is_ && (isalnum(ch) || ch == '_'));
+                    if (is_) is_.putback(ch);
+                    if (validnumber(s)) return token(num, s, pos_, "num");
+                    if (s == "fn") return token(fn, s, pos_, "fn");
+                    if (s == "if") return token(iftok, s, pos_, "if");
+                    if (s == "else") return token(elsetok, s, pos_, "else");
+                    if (s == "while") return token(whiletok, s, pos_, "if");
+                    return token(name, s, pos_, "name");
+                }
+                s.push_back(ch);
+                throw lexer_error(string("didn't expect: \"") + s + "\"");
             }
-            s.push_back(ch);
-            throw lexer_error(string("didn't expect: \"") + s + "\"");
         }
         return token(tokstream::eof, "", pos_, "eof");
     }
