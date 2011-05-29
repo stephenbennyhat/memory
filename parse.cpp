@@ -34,11 +34,11 @@ namespace memory {
     };
 
     class binopcall {
-        opfn op_;
+        binopfn op_;
         xfn a1_;
         xfn a2_;
     public:
-        binopcall(opfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
+        binopcall(binopfn op, xfn a1, xfn a2) : op_(op), a1_(a1), a2_(a2) {}
         pv operator()(pe e) { 
             return pv(new var(op_(a1_(e), a2_(e))));
         }
@@ -249,7 +249,7 @@ namespace memory {
             int ntype = toks_[0].type();
             if (ops_.count(ntype) == 0 || ops_[type].first < ops_[ntype].first)
                 rhs = parsebinoprhs(ops_[type].first+1, rhs);
-            opfn fn(ops_[type].second);
+            binopfn fn(ops_[type].second);
             lhs = binopcall(fn, lhs, rhs);
         }
         return lhs;
