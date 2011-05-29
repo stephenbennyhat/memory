@@ -44,16 +44,6 @@ namespace memory {
         }
     };
 
-    class fncall {
-        xfn fn_;
-        vector<xfn> args_;
-    public:
-        fncall(xfn fn, vector<xfn> const& args) : fn_(fn), args_(args) {}
-        pv operator()(pe e) {
-            return pv(new var(fn_(e)->getfunction()(reify(args_, e))));
-        }
-    };
-
     class compstmt {
         vector<xfn> stmts_;
     public:
@@ -91,6 +81,16 @@ namespace memory {
         }
     };
 
+   class fncall {
+        xfn fn_;
+        vector<xfn> args_;
+    public:
+        fncall(xfn fn, vector<xfn> const& args) : fn_(fn), args_(args) {}
+        pv operator()(pe e) {
+            return pv(new var(fn_(e)->getfunction()(reify(args_, e))));
+        }
+    };
+
     class closure {
         xfn fn_;
         vector<string> args_;
@@ -102,8 +102,8 @@ namespace memory {
             return pv(new var(*this));
         }
         var operator()(vector<pv> const& v) {
-            pe ee(new env);;
-            ee->setprev(e_);
+            pe ee(new env);
+            ee->setprev(e_); // extend the captured environment with the params.
             for (size_t i = 0; i < args_.size(); i++) {
                 (*ee)[args_.at(i)] = v.at(i);
             }
@@ -189,9 +189,8 @@ namespace memory {
             trace t1("cmptstmt", toks_);
             toks_.consume();
             vector<xfn> ss;
-            while (toks_[0].type() != '}') {
+            while (toks_[0].type() != '}')
                ss.push_back(parsestmt());
-            }
             toks_.consume();
             return compstmt(ss);
         }
