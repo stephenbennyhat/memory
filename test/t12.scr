@@ -1,11 +1,12 @@
+# closures
 f = fn (a) {
-  fn () {
+  fn () { # close over a
     a = a + 1;
   };
 };
 
-g=f(0);
-a=10;
+g=f(0); # a starts at 0
+a=10; # check we're not just modifying some global.
 print(g());
 #^ 0x1
 print(g());

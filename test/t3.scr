@@ -3,7 +3,12 @@ if (x) {
   print("err");
 }
 
-if (y) {
+if (y) { # y is uninitialised
   print("err");
 }
 
+if (y == 0) {
+  print "ok"
+}
+
+#^ok

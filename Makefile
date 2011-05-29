@@ -5,7 +5,8 @@ CC=g++ -Wall -g -DUSE_TR1
 $T: $O
 	$(CC) -o $T $O
 
-runtests:
+.PHONY: test
+test:
 	cd test && ./runtest
 
 .cpp.o:

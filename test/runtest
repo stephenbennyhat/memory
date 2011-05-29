@@ -1,5 +1,7 @@
 #!/bin/sh
-
+#
+# test that the output of a test matches the #^ prefixed lines in the test file.
+#
 function run() {
    echo $1
    sed -n '/#\^ /s/#\^ //p' $1 > tmp1

@@ -13,3 +13,6 @@ f = fn (a, b) { a + b; };
 f(1, 2);
 print(_);
 #^ 0x3
+
+print(a);
+#^ 0x1

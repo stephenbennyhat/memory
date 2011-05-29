@@ -1,3 +1,4 @@
+# functions returning functions.
 f = fn (x) {
   fn (y) {
     fn (z) {
