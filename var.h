@@ -14,7 +14,7 @@ namespace memory {
     typedef struct port::shared_ptr<var> pv;
     typedef struct port::shared_ptr<env> pe;
 
-    typedef port::function<var (std::vector<pv> const&)> fn;
+    typedef port::function<var (std::vector<pv> const&, pe const&)> fn;
     typedef port::function<pv (pe)> xfn;
     typedef port::function<pv& (pe)> lfn;
 
@@ -44,7 +44,6 @@ namespace memory {
 
     class var {
     public:
-
         var();
         var(mem::memory const& m);
         var(mem::range const& r);

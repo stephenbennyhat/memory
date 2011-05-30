@@ -8,11 +8,9 @@
 using std::vector;
 
 namespace memory {
-    std::string ofs = "";
-    std::string ors = "\n";
 
     var
-    readfn(vector<pv> const& args) {
+    readfn(vector<pv> const& args, pe const& e) {
         if (args.size() != 1) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
@@ -26,7 +24,7 @@ namespace memory {
     }
 
     var
-    writefn(vector<pv> const& args) {
+    writefn(vector<pv> const& args, pe const& e) {
         size_t n = args.size();
         if (n == 1) {
             mem::writemoto(std::cout, args[0]->getmemory()); 
@@ -42,18 +40,18 @@ namespace memory {
     }
 
     var
-    printfn(vector<pv> const& args) {
+    printfn(vector<pv> const& args, pe const& e) {
         for (size_t i = 0; i < args.size(); ++i) {
             std::cout << *args[i];
             if (i + 1 != args.size())
-                std::cout << ofs;
+                std::cout << *(*e)["ofs"];
         }
-        std::cout << ors;
+        std::cout << *(*e)["ors"];
         return var();
     }
 
     var
-    crc16fn(vector<pv> const& args) {
+    crc16fn(vector<pv> const& args, pe const& e) {
         if (args.size() != 1) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
@@ -63,7 +61,7 @@ namespace memory {
     }
 
     var
-    rangefn(vector<pv> const& args) {
+    rangefn(vector<pv> const& args, pe const& e) {
         if (args.size() != 1) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
@@ -72,7 +70,7 @@ namespace memory {
     }
 
     var
-    offsetfn(vector<pv> const& args) {
+    offsetfn(vector<pv> const& args, pe const& e) {
         if (args.size() != 2) {
             std::cout << "error: bad arguments" << std::endl;
             return var();
@@ -84,7 +82,7 @@ namespace memory {
     }
 
     var
-    joinfn(vector<pv> const& args) {
+    joinfn(vector<pv> const& args, pe const& e) {
         if (args.size() != 2) {
             std::cout << "error: bad arguments" << std::endl;
             return var();

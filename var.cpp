@@ -110,17 +110,18 @@ namespace memory {
     }
 
     pv& env::operator[](string s) {
-        if (0) std::cerr << "looking up " << s << std::endl;
+        bool verb = false;
+        if (verb) std::cerr << "looking up " << s << std::endl;
         env *p = this;
         do {
            scope::iterator i = p->v_.find(s);
            if (i != p->v_.end()) {
-               if (0) std::cerr << "found " << s << std::endl;
+               if (verb) std::cerr << "found " << s << " " << *i->second << std::endl;
                return i->second;
            }
            p = p->prev_.get();
         } while (p);
-        if (0) std::cerr << "not found " << s << std::endl;
+        if (verb) std::cerr << "not found " << s << std::endl;
         return v_[s] = pv(new var());
     }
 

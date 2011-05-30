@@ -6,7 +6,7 @@ $T: $O
 	$(CC) -o $T $O
 
 .PHONY: test
-test:
+test:$T
 	cd test && ./runtest
 
 .cpp.o:
@@ -24,12 +24,13 @@ depend:
 # DO NOT DELETE
 
 crc.o: mem.h memtypes.h range.h
-fn.o: parse.h mem.h memtypes.h range.h lex.h var.h fn.h
-lex.o: lex.h mem.h memtypes.h range.h var.h
+fn.o: parse.h port.h mem.h memtypes.h range.h lex.h var.h fn.h
+lex.o: lex.h mem.h memtypes.h range.h var.h port.h
 mem.o: mem.h memtypes.h range.h
-memory.o: mem.h memtypes.h range.h parse.h lex.h var.h
+memory.o: trace.h lex.h mem.h memtypes.h range.h parse.h port.h var.h
 memutils.o: mem.h memtypes.h range.h
-parse.o: parse.h mem.h memtypes.h range.h lex.h var.h fn.h trace.h
+parse.o: parse.h port.h mem.h memtypes.h range.h lex.h var.h fn.h trace.h
 readfile.o: mem.h memtypes.h range.h
-var.o: var.h mem.h memtypes.h range.h lex.h
+trace.o: trace.h lex.h mem.h memtypes.h range.h
+var.o: var.h port.h mem.h memtypes.h range.h lex.h
 writefile.o: mem.h memtypes.h range.h

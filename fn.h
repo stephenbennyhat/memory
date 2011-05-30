@@ -6,13 +6,13 @@
 
 namespace memory {
     // functions
-    var readfn(std::vector<pv> const& args);
-    var printfn(std::vector<pv> const& args);
-    var crc16fn(std::vector<pv> const& args);
-    var writefn(std::vector<pv> const& args);
-    var rangefn(std::vector<pv> const& args);
-    var offsetfn(std::vector<pv> const& args);
-    var joinfn(std::vector<pv> const& args);
+    var readfn(std::vector<pv> const& args, pe const& e);
+    var printfn(std::vector<pv> const& args, pe const& e);
+    var crc16fn(std::vector<pv> const& args, pe const& e);
+    var writefn(std::vector<pv> const& args, pe const& e);
+    var rangefn(std::vector<pv> const& args, pe const& e);
+    var offsetfn(std::vector<pv> const& args, pe const& e);
+    var joinfn(std::vector<pv> const& args, pe const& e);
 
     // binops
     var eqop(pv const& v1, pv const& v2);

@@ -97,7 +97,7 @@ namespace memory {
     public:
         fncall(xfn fn, vector<xfn> const& args) : fn_(fn), args_(args) {}
         pv operator()(pe e) {
-            return pv(new var(fn_(e)->getfunction()(reify(args_, e))));
+            return pv(new var(fn_(e)->getfunction()(reify(args_, e), e)));
         }
     };
 
@@ -111,7 +111,7 @@ namespace memory {
             e_ = e;
             return pv(new var(*this));
         }
-        var operator()(vector<pv> const& v) {
+        var operator()(vector<pv> const& v, pe const& e) {
             pe ee(new env);
             ee->setprev(e_); // extend the captured environment with the params.
             for (size_t i = 0; i < args_.size(); i++) {
@@ -143,6 +143,9 @@ namespace memory {
         (*syms_)["range"] = pv(new var(rangefn));
         (*syms_)["offset"] = pv(new var(offsetfn));
         (*syms_)["join"] = pv(new var(joinfn));
+
+        (*syms_)["ofs"] = pv(new var(string("")));
+        (*syms_)["ors"] = pv(new var(string("\n")));
 
         binops_[lexer::eqtok] = binop(5, eqop);
         binops_[lexer::netok] = binop(5, neop);
