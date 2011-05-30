@@ -1,0 +1,14 @@
+if (!y) {
+    print("ok");
+#^ ok
+}
+else {
+    print("!ok");
+}
+
+print(!z);
+#^ 0x1
+print(y);
+#^ (null)
+print(!"abc");
+#^ (null)

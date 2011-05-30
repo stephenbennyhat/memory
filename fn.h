@@ -24,6 +24,9 @@ namespace memory {
     var mul(pv const& v1, pv const& v2);
     var index(pv const& v1, pv const& v2);
     var mkrange(pv const& v1, pv const& v2);
+
+    // primops
+    var notop(pv const& v);
 }
 #endif
 

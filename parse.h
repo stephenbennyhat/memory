@@ -13,6 +13,7 @@
 namespace memory {
 
     typedef port::function<var (pv const&, pv const&)> binopfn;
+    typedef port::function<var (pv const&)> primopfn;
 
     class parser {
     public:
@@ -31,10 +32,15 @@ namespace memory {
         void parse(std::istream& os);
         void parse(std::string const& s);
     private:
-        typedef std::pair<int, binopfn> op; // prec, fn
-        typedef std::map<int, op> optab;
+        typedef std::pair<int, binopfn> binop; // prec, fn
+        typedef std::map<int, binop> binoptab;
 
-        optab ops_;
+        typedef primopfn primop;
+        typedef std::map<int, primop> primoptab;
+
+        binoptab binops_;
+        primoptab primops_;
+
         tokstream toks_;
 
         pe syms_;

@@ -33,6 +33,16 @@ namespace memory {
         pv& operator()(pe e) { return (*e)[s_]; }
     };
 
+    class primopcall {
+        primopfn op_;
+        xfn a_;
+    public:
+        primopcall(primopfn op, xfn a) : op_(op), a_(a) {}
+        pv operator()(pe e) {
+            return pv(new var(op_(a_(e))));
+        }
+    };
+
     class binopcall {
         binopfn op_;
         xfn a1_;
@@ -134,14 +144,16 @@ namespace memory {
         (*syms_)["offset"] = pv(new var(offsetfn));
         (*syms_)["join"] = pv(new var(joinfn));
 
-        ops_[lexer::eqtok] = op(5, eqop);
-        ops_[lexer::netok] = op(5, neop);
-        ops_['<'] = op(10, ltop);
-        ops_['>'] = op(10, gtop);
-        ops_['+'] = op(20, add);
-        ops_['-'] = op(20, sub);
-        ops_['*'] = op(40, mul);
-        ops_[lexer::dotdot] = op (50, mkrange);
+        binops_[lexer::eqtok] = binop(5, eqop);
+        binops_[lexer::netok] = binop(5, neop);
+        binops_['<'] = binop(10, ltop);
+        binops_['>'] = binop(10, gtop);
+        binops_['+'] = binop(20, add);
+        binops_['-'] = binop(20, sub);
+        binops_['*'] = binop(40, mul);
+        binops_[lexer::dotdot] = binop(50, mkrange);
+
+        primops_['!'] = primop(notop);
     }
 
     void parser::parse(std::istream& is) {
@@ -157,7 +169,7 @@ namespace memory {
 
     void
     parser::printops(std::ostream& os) const {
-        for (optab::const_iterator o = ops_.begin(); o != ops_.end(); o++) {
+        for (binoptab::const_iterator o = binops_.begin(); o != binops_.end(); o++) {
             os  << o->first
                 << "=[" << o->second.first << "," << o->second.second << "]"
                 << std::endl;
@@ -242,14 +254,14 @@ namespace memory {
         for (;;) {
             trace t1("binoploop", toks_);
             int type = toks_[0].type();
-            if (ops_.count(type) == 0 || ops_[type].first < exprprec)
+            if (binops_.count(type) == 0 || binops_[type].first < exprprec)
                 return lhs;
             toks_.consume();
             xfn rhs = parseprimaryexpr();
             int ntype = toks_[0].type();
-            if (ops_.count(ntype) == 0 || ops_[type].first < ops_[ntype].first)
-                rhs = parsebinoprhs(ops_[type].first+1, rhs);
-            binopfn fn(ops_[type].second);
+            if (binops_.count(ntype) == 0 || binops_[type].first < binops_[ntype].first)
+                rhs = parsebinoprhs(binops_[type].first+1, rhs);
+            binopfn fn(binops_[type].second);
             lhs = binopcall(fn, lhs, rhs);
         }
         return lhs;
@@ -266,6 +278,13 @@ namespace memory {
              return parsenameexpr();
         if (toks_[0].type() == '(') 
             return parseparenexpr();
+
+        primoptab::const_iterator it = primops_.find(toks_[0].type());
+        if (it != primops_.end()) {
+            toks_.consume();
+            return primopcall(it->second, parseprimaryexpr());
+        }
+
         parseerror("invalid primary expression");
         return constantly(0);
     }

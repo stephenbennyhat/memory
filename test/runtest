@@ -2,11 +2,13 @@
 #
 # test that the output of a test matches the #^ prefixed lines in the test file.
 #
+E=expected.tmp
+A=actual.tmp
 function run() {
    echo $1
-   sed -n '/#\^ /s/#\^ //p' $1 > tmp1
-   ../memory $1 > tmp2
-   diff --strip-trailing-cr tmp1 tmp2
+   sed -n '/#\^ /s/#\^ //p' $1 > $E
+   ../memory $1 > $A
+   diff -u --strip-trailing-cr $E $A
 }
 
 if [ $# != 0 ]
@@ -19,4 +21,4 @@ else
         done
 fi
 
-rm -f tmp1 tmp2
+rm -f $E $A

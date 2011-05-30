@@ -155,4 +155,14 @@ namespace memory {
     mkrange(pv const& v1, pv const& v2) {
         return mem::range(v1->getnumber(), v2->getnumber());
     }
+
+    var
+    notop(pv const& v)
+    {
+        if (v->is(tnull))
+            return var(1);
+        if (v->is(tnumber))
+            return !v->getnumber();
+        return var();
+    }
 }
